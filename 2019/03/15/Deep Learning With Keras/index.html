@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="深度学习,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="前言因为毕设是深度学习方面的，所以稍微花了点时间入门深度学习。因为Keras对新手极其友好，所以采用的框架是Keras，比tensorflow封装更好，其后端大多数人也是选择的tensorflow。本文将介绍一些深度学习相关的入门级概念和入门级工程实践。">
+<meta name="keywords" content="深度学习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Deep Learning With Keras">
+<meta property="og:url" content="https://bboylin.github.io/2019/03/15/Deep Learning With Keras/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="前言因为毕设是深度学习方面的，所以稍微花了点时间入门深度学习。因为Keras对新手极其友好，所以采用的框架是Keras，比tensorflow封装更好，其后端大多数人也是选择的tensorflow。本文将介绍一些深度学习相关的入门级概念和入门级工程实践。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://bboylin.github.io/images/神经网络.png">
+<meta property="og:image" content="https://bboylin.github.io/images/activation.png">
+<meta property="og:image" content="https://bboylin.github.io/images/activitation_figure.png">
+<meta property="og:image" content="https://bboylin.github.io/images/RNN.png">
+<meta property="og:image" content="https://bboylin.github.io/images/cnn-demo.png">
+<meta property="og:image" content="https://bboylin.github.io/images/cross-enproty.png">
+<meta property="og:image" content="https://bboylin.github.io/images/softmax.png">
+<meta property="og:image" content="https://bboylin.github.io/images/mse.png">
+<meta property="og:image" content="https://bboylin.github.io/images/梯度学习.png">
+<meta property="og:image" content="https://bboylin.github.io/images/exponential_decay.png">
+<meta property="og:image" content="https://bboylin.github.io/images/overfitting.png">
+<meta property="og:image" content="https://bboylin.github.io/images/l1.png">
+<meta property="og:image" content="https://bboylin.github.io/images/l2.png">
+<meta property="og:image" content="https://bboylin.github.io/images/l.png">
+<meta property="og:updated_time" content="2018-12-25T14:13:24.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Deep Learning With Keras">
+<meta name="twitter:description" content="前言因为毕设是深度学习方面的，所以稍微花了点时间入门深度学习。因为Keras对新手极其友好，所以采用的框架是Keras，比tensorflow封装更好，其后端大多数人也是选择的tensorflow。本文将介绍一些深度学习相关的入门级概念和入门级工程实践。">
+<meta name="twitter:image" content="https://bboylin.github.io/images/神经网络.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/03/15/Deep Learning With Keras/">
+
+
+
+
+
+  <title>Deep Learning With Keras | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/03/15/Deep Learning With Keras/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar_bboylin.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Deep Learning With Keras</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-15T21:08:52+08:00">
+                2019-03-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/03/15/Deep Learning With Keras/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/03/15/Deep Learning With Keras/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因为毕设是深度学习方面的，所以稍微花了点时间入门深度学习。因为Keras对新手极其友好，所以采用的框架是Keras，比tensorflow封装更好，其后端大多数人也是选择的tensorflow。本文将介绍一些深度学习相关的入门级概念和入门级工程实践。<a id="more"></a></p>
+<h2 id="深度学习入门概念"><a href="#深度学习入门概念" class="headerlink" title="深度学习入门概念"></a>深度学习入门概念</h2><h3 id="神经网络"><a href="#神经网络" class="headerlink" title="神经网络"></a>神经网络</h3><p><img src="/images/神经网络.png" alt></p>
+<p>图示为一个简单的前馈神经网络，或者多层感知机(MLP),每一层的输出作为下一层的输入前向传播。神经网络的基础单位是神经元。神经网络常用的训练算法是<a href="https://zh.wikipedia.org/wiki/%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E7%AE%97%E6%B3%95" target="_blank" rel="noopener"><code>Backpropagation</code>(反向传播)</a>,即根据损失函数的偏导更新权重，达到学习的目的。</p>
+<h3 id="激活函数"><a href="#激活函数" class="headerlink" title="激活函数"></a>激活函数</h3><p><img src="/images/activation.png" alt></p>
+<p>如图示一个神经元的输入和输出，带权重输入经过激活函数后转化成输出。激活函数可以为线性，或者非线性。假如为线性的话，那多层隐层组合的效果和单层效果一样，依然是线性的，所以神经网络一般都用非线性的激活函数。对于进入神经元的来自上一层神经网络的输入向量 x，使用线性整流激活函数relu的神经元会输出<code>max(0,wTx+b)</code>。相对sigmoid函数(s型函数,<code>1/1+exp(-x)</code>)来说，relu不容易在两端丢失信息，所以效果更好。看下图就容易理解了：</p>
+<p><img src="/images/activitation_figure.png" alt></p>
+<h3 id="RNN"><a href="#RNN" class="headerlink" title="RNN"></a>RNN</h3><p>RNN(循环神经网络)的结构可以简单理解为在通常的多层前反馈神经网络上增加了循环输入，以此来学习序列数据的“顺序”特性。例如当前输入是“很”，根据前一输入是“天空”，我们很容易知道输出大概率是“蓝”，语音识别和语言模型中RNN用处较多。RNN在时间上具有记忆性。其训练算法是<code>Backpropagation through time</code>。</p>
+<p><img src="/images/RNN.png" alt></p>
+<p>RNN的一个成功应用是LSTM(long short term memory，长短时记忆网络)。</p>
+<h3 id="CNN"><a href="#CNN" class="headerlink" title="CNN"></a>CNN</h3><p>卷积运算通常用*表示，即：<code>s(t) = (x ∗ w)(t)</code>，其中<code>x</code>为输入，<code>w</code>为核函数，<code>s</code>有时称为特征映射。在连续条件下亦可表示为：<code>s(t) = ∫x(a)w(t − a)da</code>。在离散条件下可表示为：<code>s(t) = (x ∗ w)(t) = ∞∑a=−∞ x(a)w(t − a)</code>。</p>
+<p><a href="https://zh.wikipedia.org/wiki/%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C" target="_blank" rel="noopener">CNN(卷积神经网络)</a>在图像和语音识别方面具备明显优势，一个卷积神经网络主要有以下5个结构：</p>
+<ul>
+<li>输入层</li>
+<li>卷积层（Convolutional Layer）</li>
+<li>池化层（Pooling Layer）: 进行池化操作。池化实际是降采样，有多种不同形式的池化函数，“最大池化”是最常见的。通常卷积层之间会周期性插入池化层。以减小参数的空间大小，降低计算量，也控制了过拟合。</li>
+<li>全连接层（Fully-Connected Layer）</li>
+<li>softmax层</li>
+</ul>
+<p><img src="/images/cnn-demo.png" alt></p>
+<h3 id="损失函数-Loss-和softmax"><a href="#损失函数-Loss-和softmax" class="headerlink" title="损失函数(Loss)和softmax"></a>损失函数(Loss)和softmax</h3><p>损失函数主要评估的是输出的预测结果和真实结果之间的距离，越大则越不准确，所以我们的目标就是要minimize Loss。关于Keras中定义的损失函数可以参考<a href="https://keras-cn.readthedocs.io/en/latest/other/objectives/" target="_blank" rel="noopener">官方文档</a>。在分类问题中使用较多的损失函数是交叉熵(cross-entropy)，他刻画了两个概率分布之间的距离。给定两个概率分布<code>p</code>,<code>q</code>，则通过<code>q</code>表示<code>p</code>的交叉熵为：<br><img src="/images/cross-enproty.png" alt><br>注意交叉熵函数不是关于<code>p</code>,<code>q</code>对称的。因为神经网络的输出并不一定是一个概率分布，所以需要<code>softmax</code>将神经网络的输出转化为概率分布。假设原始输出为<code>y1</code>,<code>y2</code>,…,<code>yn</code>，那经过softmax回归处理后的输出为：<br><img src="/images/softmax.png" alt></p>
+<p>与分类问题不同，回归问题(例如房价预测)一般选用<code>MSE</code>(均方误差,<code>mean squared error</code>,同样也在分类问题中常用)作为损失函数,定义如下：<br><img src="/images/mse.png" alt></p>
+<h3 id="梯度学习和学习率"><a href="#梯度学习和学习率" class="headerlink" title="梯度学习和学习率"></a>梯度学习和学习率</h3><p>令<code>𝜽=(w1,w2,....,b1,b2,....)</code>，其中w为每个输入的权重，b为每个输入的偏差(bias)，bias与数据无关，是模型自带的，决定了神经元产生正负激励的难易程度(即原来输出大于0就是正激励，现在输出要大于b才是正激励)，则为了使模型有更好的训练结果，每次更新<code>𝑤 ← 𝑤 − 𝜇 𝜕𝐿/𝜕𝑤</code>，<code>b ← b − 𝜇 𝜕𝐿/𝜕b</code>,其中<code>𝜇</code>是学习率(learning rate)，<code>L</code>是损失函数值。这样之后得到的<code>𝜽</code>一般能有效降低<code>L</code>。</p>
+<p><img src="/images/梯度学习.png" alt></p>
+<p>关于学习率如何设置，<code>tensorflow</code>提供了一种比较灵活的学习率设置方法——指数衰减法。<code>tf.train.exponential_decay</code>函数可以实现指数级减小学习率，通过一开始设置一个较大的学习率快速得到一个较优的解，然后随着迭代的进行逐步减少学习率，以使模型达到一个稳定的效果。类似这样：<br><img src="/images/exponential_decay.png" alt></p>
+<h3 id="欠拟合、过拟合、正则化"><a href="#欠拟合、过拟合、正则化" class="headerlink" title="欠拟合、过拟合、正则化"></a>欠拟合、过拟合、正则化</h3><p>欠拟合是指模型不能在训练集上获得足够低的误差。而过拟合是指训练误差和测试误差之间的差距太大。过拟合往往是由于模型过分注重拟合训练数据中的噪声，这样导致虽然训练误差下降，但是测试误差却上升。</p>
+<p><img src="/images/overfitting.png" alt></p>
+<p>正则化是一种对抗过拟合的方法。正则化的思想是在损失函数中加入刻画模型复杂程度的指标。假如原损失函数为<code>J(𝜽)</code>，那么正则化不是直接优化<code>J(𝜽)</code>，而是优化<code>J(𝜽)+λR(w)</code>。其中<code>R(w)</code>刻画的是模型的复杂程度，<code>λ</code>是模型复杂损失在总损失中的比例。<code>R(w)</code>有两种，一种是L1正则化，一种是L2正则化，分别对应：<br><img src="/images/l1.png" alt><br><img src="/images/l2.png" alt></p>
+<p>L1会让参数变得稀疏，会有较多权重变为0，达到特征选取的目的。L1不可导，L2可导，所以L2优化起来更简洁。实践中可以将二者结合起来使用：<br><img src="/images/l.png" alt></p>
+<h2 id="Keras入门实践"><a href="#Keras入门实践" class="headerlink" title="Keras入门实践"></a>Keras入门实践</h2><p>Keras可配置backend选项，在<code>/.keras/keras.json</code>(相对home路径)下配置，默认是tensorflow，可选cntk。<br><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"floatx"</span>: <span class="string">"float32"</span>,</span><br><span class="line">    <span class="attr">"epsilon"</span>: <span class="number">1e-07</span>,</span><br><span class="line">    <span class="attr">"backend"</span>: <span class="string">"tensorflow"</span>,</span><br><span class="line">    <span class="attr">"image_data_format"</span>: <span class="string">"channels_last"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="运行-Keras-模型"><a href="#运行-Keras-模型" class="headerlink" title="运行 Keras 模型"></a>运行 Keras 模型</h3><p>Keras 的核心概念是模型（model），深度学习模型的构建运行主要包括以下几个步骤：</p>
+<ul>
+<li>定义模型：创建一个序列（sequence），添加层（layers）；</li>
+<li>编译模型：指定损失函数（loss function），优化器（optimizer），评价指标(metrics)；</li>
+<li>训练模型：载入数据进行训练；</li>
+<li>模型预测：使用训练好的模型进行预测；</li>
+</ul>
+<h3 id="来看一个简单的例子"><a href="#来看一个简单的例子" class="headerlink" title="来看一个简单的例子"></a>来看一个简单的例子</h3><p><a href="/assets/pima-indians-diabetes.csv"><code>pima-indians-diabetes.csv</code></a>是一组糖尿病患者的数据，前8列是所有的numerical属性，最后1列是是否患糖尿病。我们通过Keras建立一个简单的神经网络来建立一个预测糖尿病的模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Create first network with Keras</span></span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Sequential</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Dense</span><br><span class="line"><span class="keyword">import</span> numpy</span><br><span class="line"><span class="comment"># fix random seed for reproducibility</span></span><br><span class="line">seed = <span class="number">7</span></span><br><span class="line">numpy.random.seed(seed)</span><br><span class="line"><span class="comment"># load pima indians dataset</span></span><br><span class="line">dataset = numpy.loadtxt(<span class="string">"pima-indians-diabetes.csv"</span>, delimiter=<span class="string">","</span>)</span><br><span class="line"><span class="comment"># split into input (X) and output (Y) variables</span></span><br><span class="line">X = dataset[:,<span class="number">0</span>:<span class="number">8</span>]</span><br><span class="line">Y = dataset[:,<span class="number">8</span>]</span><br><span class="line"><span class="comment"># create model</span></span><br><span class="line">model = Sequential()</span><br><span class="line">model.add(Dense(<span class="number">12</span>, input_dim=<span class="number">8</span>, activation=<span class="string">'relu'</span>,kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">model.add(Dense(<span class="number">8</span>,activation=<span class="string">'relu'</span>,kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">model.add(Dense(<span class="number">1</span>, activation=<span class="string">'sigmoid'</span>,kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line"><span class="comment"># Compile model</span></span><br><span class="line">model.compile(loss=<span class="string">'binary_crossentropy'</span>, optimizer=<span class="string">'adam'</span>, metrics=[<span class="string">'accuracy'</span>])</span><br><span class="line"><span class="comment"># Fit the model</span></span><br><span class="line">model.fit(X, Y, epochs=<span class="number">150</span>, batch_size=<span class="number">10</span>)</span><br><span class="line"><span class="comment"># evaluate the model</span></span><br><span class="line">scores = model.evaluate(X, Y)</span><br><span class="line">print(<span class="string">"%s: %.2f%%"</span> % (model.metrics_names[<span class="number">1</span>], scores[<span class="number">1</span>]*<span class="number">100</span>))</span><br></pre></td></tr></table></figure>
+<p>运行结果如下，每一轮训练都会输出一个损失率和正确率：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">Epoch 143/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4614 - acc: 0.7878</span><br><span class="line">Epoch 144/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4508 - acc: 0.7969</span><br><span class="line">Epoch 145/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4580 - acc: 0.7747</span><br><span class="line">Epoch 146/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4627 - acc: 0.7812</span><br><span class="line">Epoch 147/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4531 - acc: 0.7943</span><br><span class="line">Epoch 148/150</span><br><span class="line">768/768 [==============================] - 0s - loss: 0.4656 - acc: 0.7734</span><br></pre></td></tr></table></figure></p>
+<p>其中优化器选用的adam，研究表明其优化性能较好。metric是评估指标,选的<code>accuracy</code>。</p>
+<p>再来个10-fold cross validation的例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># MLP for Pima Indians Dataset with 10-fold cross validation</span></span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Sequential</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Dense</span><br><span class="line"><span class="keyword">from</span> sklearn.cross_validation <span class="keyword">import</span> StratifiedKFold</span><br><span class="line"><span class="keyword">import</span> numpy</span><br><span class="line"><span class="comment"># fix random seed for reproducibility</span></span><br><span class="line">seed = <span class="number">7</span></span><br><span class="line">numpy.random.seed(seed)</span><br><span class="line"><span class="comment"># load pima indians dataset</span></span><br><span class="line">dataset = numpy.loadtxt(<span class="string">"MyAnt.csv"</span>, delimiter=<span class="string">","</span>)</span><br><span class="line"><span class="comment"># split into input (X) and output (Y) variables</span></span><br><span class="line">X = dataset[:, <span class="number">0</span>:<span class="number">61</span>]</span><br><span class="line">Y = dataset[:, <span class="number">61</span>]</span><br><span class="line"><span class="comment"># define 10-fold cross validation test harness</span></span><br><span class="line">kfold = StratifiedKFold(y=Y, n_folds=<span class="number">10</span>, shuffle=<span class="literal">True</span>, random_state=seed)</span><br><span class="line">cvscores = []</span><br><span class="line"><span class="keyword">for</span> i, (train, test) <span class="keyword">in</span> enumerate(kfold):</span><br><span class="line">    <span class="comment"># create model</span></span><br><span class="line">    model = Sequential()</span><br><span class="line">    model.add(Dense(<span class="number">90</span>, input_dim=<span class="number">61</span>, activation=<span class="string">'relu'</span>,</span><br><span class="line">                    kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">    model.add(Dense(<span class="number">80</span>, activation=<span class="string">'relu'</span>,</span><br><span class="line">                    kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">    model.add(Dense(<span class="number">61</span>, activation=<span class="string">'relu'</span>,</span><br><span class="line">                    kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">    model.add(Dense(<span class="number">61</span>, activation=<span class="string">'relu'</span>,</span><br><span class="line">                    kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">    model.add(Dense(<span class="number">1</span>, activation=<span class="string">'sigmoid'</span>,</span><br><span class="line">                    kernel_initializer=<span class="string">'random_uniform'</span>))</span><br><span class="line">    <span class="comment"># Compile model</span></span><br><span class="line">    model.compile(loss=<span class="string">'binary_crossentropy'</span>, optimizer=<span class="string">'adam'</span>,</span><br><span class="line">                  metrics=[<span class="string">'accuracy'</span>])</span><br><span class="line">    <span class="comment"># Fit the model</span></span><br><span class="line">    model.fit(X[train], Y[train], epochs=<span class="number">150</span>, batch_size=<span class="number">10</span>, verbose=<span class="number">0</span>)</span><br><span class="line">    <span class="comment"># evaluate the model</span></span><br><span class="line">    scores = model.evaluate(X[test], Y[test], verbose=<span class="number">0</span>)</span><br><span class="line">    print(<span class="string">"%s: %.2f%%"</span> % (model.metrics_names[<span class="number">1</span>], scores[<span class="number">1</span>] * <span class="number">100</span>))</span><br><span class="line">    cvscores.append(scores[<span class="number">1</span>] * <span class="number">100</span>)</span><br><span class="line">print(<span class="string">"%.2f%% (+/- %.2f%%)"</span> % (numpy.mean(cvscores), numpy.std(cvscores)))</span><br></pre></td></tr></table></figure>
+<p>当然这只是最简单的神经网络入门demo，后期还需要学习调参技巧去优化模型，达到更好的训练效果。</p>
+<p>参考：</p>
+<ul>
+<li><a href="http://yangguang2009.github.io/categories/%E3%80%8A%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%E6%95%99%E7%A8%8B%E3%80%8B/" target="_blank" rel="noopener">深度学习教程</a></li>
+<li><a href="https://cnbeining.github.io/deep-learning-with-python-cn/1-introduction/ch1-welcome.html" target="_blank" rel="noopener">Deep Learning With Python</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/深度学习/" rel="tag"># 深度学习</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/15/dex文件结构/" rel="next" title="dex文件结构">
+                <i class="fa fa-chevron-left"></i> dex文件结构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/15/overridePendingTransition居然失效了？/" rel="prev" title="overridePendingTransition居然失效了？">
+                overridePendingTransition居然失效了？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/avatar_bboylin.jpeg" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#深度学习入门概念"><span class="nav-number">2.</span> <span class="nav-text">深度学习入门概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#神经网络"><span class="nav-number">2.1.</span> <span class="nav-text">神经网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#激活函数"><span class="nav-number">2.2.</span> <span class="nav-text">激活函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RNN"><span class="nav-number">2.3.</span> <span class="nav-text">RNN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CNN"><span class="nav-number">2.4.</span> <span class="nav-text">CNN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#损失函数-Loss-和softmax"><span class="nav-number">2.5.</span> <span class="nav-text">损失函数(Loss)和softmax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#梯度学习和学习率"><span class="nav-number">2.6.</span> <span class="nav-text">梯度学习和学习率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#欠拟合、过拟合、正则化"><span class="nav-number">2.7.</span> <span class="nav-text">欠拟合、过拟合、正则化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Keras入门实践"><span class="nav-number">3.</span> <span class="nav-text">Keras入门实践</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运行-Keras-模型"><span class="nav-number">3.1.</span> <span class="nav-text">运行 Keras 模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#来看一个简单的例子"><span class="nav-number">3.2.</span> <span class="nav-text">来看一个简单的例子</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/03/15/Deep Learning With Keras/';
+          this.page.identifier = '2019/03/15/Deep Learning With Keras/';
+          this.page.title = 'Deep Learning With Keras';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

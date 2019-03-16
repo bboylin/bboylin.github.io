@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Android,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Activity页面展示过程">
+<meta property="og:url" content="https://bboylin.github.io/2019/03/15/Activity页面显示流程/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://bboylin.github.io/images/setContentView.png">
+<meta property="og:image" content="https://bboylin.github.io/images/viewTree.png">
+<meta property="og:image" content="https://bboylin.github.io/images/action_mode.png">
+<meta property="og:image" content="https://bboylin.github.io/images/wmg-addView.png">
+<meta property="og:updated_time" content="2018-12-25T14:13:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Activity页面展示过程">
+<meta name="twitter:description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta name="twitter:image" content="https://bboylin.github.io/images/setContentView.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/03/15/Activity页面显示流程/">
+
+
+
+
+
+  <title>Activity页面展示过程 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/03/15/Activity页面显示流程/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar_bboylin.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Activity页面展示过程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-15T21:08:52+08:00">
+                2019-03-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/03/15/Activity页面显示流程/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/03/15/Activity页面显示流程/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。<a id="more"></a></p>
+<h3 id="从SetContentView说起"><a href="#从SetContentView说起" class="headerlink" title="从SetContentView说起"></a>从SetContentView说起</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Set the activity content from a layout resource.  The resource will be</span></span><br><span class="line"><span class="comment"> * inflated, adding all top-level views to the activity.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> layoutResID Resource ID to be inflated.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #setContentView(android.view.View)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #setContentView(android.view.View, android.view.ViewGroup.LayoutParams)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setContentView</span><span class="params">(@LayoutRes <span class="keyword">int</span> layoutResID)</span> </span>&#123;</span><br><span class="line">    getWindow().setContentView(layoutResID);</span><br><span class="line">    <span class="comment">// Creates a new ActionBar, locates the inflated ActionBarView, </span></span><br><span class="line">    <span class="comment">// initializes the ActionBar with the view, and sets mActionBar.</span></span><br><span class="line">    initWindowDecorActionBar();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要是调用了<code>PhoneWindow</code>的setContentView和初始化了ActionBar。再来看<code>PhoneWindow</code>的setContentView:</p>
+<p><img src="/images/setContentView.png" alt></p>
+<p>主要是给当前window安装上decorView, 然后渲染layout。来看看installDecor()干了什么：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">installDecor</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    mForceDecorInstall = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (mDecor == <span class="keyword">null</span>) &#123;</span><br><span class="line">        mDecor = generateDecor(-<span class="number">1</span>);</span><br><span class="line">        mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);</span><br><span class="line">        mDecor.setIsRootNamespace(<span class="keyword">true</span>);</span><br><span class="line">        <span class="keyword">if</span> (!mInvalidatePanelMenuPosted &amp;&amp; mInvalidatePanelMenuFeatures != <span class="number">0</span>) &#123;</span><br><span class="line">            mDecor.postOnAnimation(mInvalidatePanelMenuRunnable);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        mDecor.setWindow(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (mContentParent == <span class="keyword">null</span>) &#123;</span><br><span class="line">        mContentParent = generateLayout(mDecor);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Set up decor part of UI to ignore fitsSystemWindows if appropriate.</span></span><br><span class="line">        mDecor.makeOptionalFitsSystemWindows();</span><br><span class="line">        ........</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>主要是创建DecorView实例赋给mDecor，以及generateLayout传入mDecor生成mContentParent。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> DecorView <span class="title">generateDecor</span><span class="params">(<span class="keyword">int</span> featureId)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// System process doesn't have application context and in that case we need to directly use</span></span><br><span class="line">    <span class="comment">// the context we have. Otherwise we want the application context, so we don't cling to the</span></span><br><span class="line">    <span class="comment">// activity.</span></span><br><span class="line">    Context context;</span><br><span class="line">    <span class="keyword">if</span> (mUseDecorContext) &#123;</span><br><span class="line">        Context applicationContext = getContext().getApplicationContext();</span><br><span class="line">        <span class="keyword">if</span> (applicationContext == <span class="keyword">null</span>) &#123;</span><br><span class="line">            context = getContext();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            context = <span class="keyword">new</span> DecorContext(applicationContext, getContext());</span><br><span class="line">            <span class="keyword">if</span> (mTheme != -<span class="number">1</span>) &#123;</span><br><span class="line">                context.setTheme(mTheme);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        context = getContext();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> DecorView(context, featureId, <span class="keyword">this</span>, getAttributes());</span><br><span class="line">&#125;</span><br><span class="line">......</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> ViewGroup <span class="title">generateLayout</span><span class="params">(DecorView decor)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Apply data from current theme.</span></span><br><span class="line"></span><br><span class="line">    TypedArray a = getWindowStyle();</span><br><span class="line">    ........</span><br><span class="line">    mIsFloating = a.getBoolean(R.styleable.Window_windowIsFloating, <span class="keyword">false</span>);</span><br><span class="line">    <span class="keyword">int</span> flagsToUpdate = (FLAG_LAYOUT_IN_SCREEN|FLAG_LAYOUT_INSET_DECOR)</span><br><span class="line">            &amp; (~getForcedWindowFlags());</span><br><span class="line">    <span class="keyword">if</span> (mIsFloating) &#123;</span><br><span class="line">        setLayout(WRAP_CONTENT, WRAP_CONTENT);</span><br><span class="line">        setFlags(<span class="number">0</span>, flagsToUpdate);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        setFlags(FLAG_LAYOUT_IN_SCREEN|FLAG_LAYOUT_INSET_DECOR, flagsToUpdate);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowNoTitle, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        requestFeature(FEATURE_NO_TITLE);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowActionBar, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        <span class="comment">// Don't allow an action bar if there is no title.</span></span><br><span class="line">        requestFeature(FEATURE_ACTION_BAR);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowActionBarOverlay, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        requestFeature(FEATURE_ACTION_BAR_OVERLAY);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowActionModeOverlay, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        requestFeature(FEATURE_ACTION_MODE_OVERLAY);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowSwipeToDismiss, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        requestFeature(FEATURE_SWIPE_TO_DISMISS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowFullscreen, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowTranslucentStatus,</span><br><span class="line">            <span class="keyword">false</span>)) &#123;</span><br><span class="line">        setFlags(FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_STATUS</span><br><span class="line">                &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowTranslucentNavigation,</span><br><span class="line">            <span class="keyword">false</span>)) &#123;</span><br><span class="line">        setFlags(FLAG_TRANSLUCENT_NAVIGATION, FLAG_TRANSLUCENT_NAVIGATION</span><br><span class="line">                &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowOverscan, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        setFlags(FLAG_LAYOUT_IN_OVERSCAN, FLAG_LAYOUT_IN_OVERSCAN&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowShowWallpaper, <span class="keyword">false</span>)) &#123;</span><br><span class="line">        setFlags(FLAG_SHOW_WALLPAPER, FLAG_SHOW_WALLPAPER&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (a.getBoolean(R.styleable.Window_windowEnableSplitTouch,</span><br><span class="line">            getContext().getApplicationInfo().targetSdkVersion</span><br><span class="line">                    &gt;= android.os.Build.VERSION_CODES.HONEYCOMB)) &#123;</span><br><span class="line">        setFlags(FLAG_SPLIT_TOUCH, FLAG_SPLIT_TOUCH&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line">    ........</span><br><span class="line">    mIsTranslucent = a.getBoolean(R.styleable.Window_windowIsTranslucent, <span class="keyword">false</span>);</span><br><span class="line">    ........</span><br><span class="line">    <span class="keyword">if</span> (!mForcedStatusBarColor) &#123;</span><br><span class="line">        mStatusBarColor = a.getColor(R.styleable.Window_statusBarColor, <span class="number">0xFF000000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!mForcedNavigationBarColor) &#123;</span><br><span class="line">        mNavigationBarColor = a.getColor(R.styleable.Window_navigationBarColor, <span class="number">0xFF000000</span>);</span><br><span class="line">        mNavigationBarDividerColor = a.getColor(R.styleable.Window_navigationBarDividerColor,</span><br><span class="line">                <span class="number">0x00000000</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    WindowManager.LayoutParams params = getAttributes();</span><br><span class="line">    .......</span><br><span class="line">    <span class="keyword">if</span> (params.windowAnimations == <span class="number">0</span>) &#123;</span><br><span class="line">        params.windowAnimations = a.getResourceId(</span><br><span class="line">                R.styleable.Window_windowAnimationStyle, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The rest are only done if this window is not embedded; otherwise,</span></span><br><span class="line">    <span class="comment">// the values are inherited from our container.</span></span><br><span class="line">    <span class="keyword">if</span> (getContainer() == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mBackgroundDrawable == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (mBackgroundResource == <span class="number">0</span>) &#123;</span><br><span class="line">                mBackgroundResource = a.getResourceId(</span><br><span class="line">                        R.styleable.Window_windowBackground, <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (mFrameResource == <span class="number">0</span>) &#123;</span><br><span class="line">                mFrameResource = a.getResourceId(R.styleable.Window_windowFrame, <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            mBackgroundFallbackResource = a.getResourceId(</span><br><span class="line">                    R.styleable.Window_windowBackgroundFallback, <span class="number">0</span>);</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">false</span>) &#123;</span><br><span class="line">                System.out.println(<span class="string">"Background: "</span></span><br><span class="line">                        + Integer.toHexString(mBackgroundResource) + <span class="string">" Frame: "</span></span><br><span class="line">                        + Integer.toHexString(mFrameResource));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (mLoadElevation) &#123;</span><br><span class="line">            mElevation = a.getDimension(R.styleable.Window_windowElevation, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        mClipToOutline = a.getBoolean(R.styleable.Window_windowClipToOutline, <span class="keyword">false</span>);</span><br><span class="line">        mTextColor = a.getColor(R.styleable.Window_textColor, Color.TRANSPARENT);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Inflate the window decor.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> layoutResource;</span><br><span class="line">    <span class="keyword">int</span> features = getLocalFeatures();</span><br><span class="line">    <span class="comment">// System.out.println("Features: 0x" + Integer.toHexString(features));</span></span><br><span class="line">    <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) != <span class="number">0</span>) &#123;</span><br><span class="line">        layoutResource = R.layout.screen_swipe_dismiss;</span><br><span class="line">        setCloseOnSwipeEnabled(<span class="keyword">true</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; ((<span class="number">1</span> &lt;&lt; FEATURE_LEFT_ICON) | (<span class="number">1</span> &lt;&lt; FEATURE_RIGHT_ICON))) != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = <span class="keyword">new</span> TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogTitleIconsDecorLayout, res, <span class="keyword">true</span>);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            layoutResource = R.layout.screen_title_icons;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// XXX Remove this once action bar supports these features.</span></span><br><span class="line">        removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">        <span class="comment">// System.out.println("Title Icons!");</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; ((<span class="number">1</span> &lt;&lt; FEATURE_PROGRESS) | (<span class="number">1</span> &lt;&lt; FEATURE_INDETERMINATE_PROGRESS))) != <span class="number">0</span></span><br><span class="line">            &amp;&amp; (features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_ACTION_BAR)) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Special case for a window with only a progress bar (and title).</span></span><br><span class="line">        <span class="comment">// XXX Need to have a no-title version of embedded windows.</span></span><br><span class="line">        layoutResource = R.layout.screen_progress;</span><br><span class="line">        <span class="comment">// System.out.println("Progress!");</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_CUSTOM_TITLE)) != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Special case for a window with a custom title.</span></span><br><span class="line">        <span class="comment">// If the window is floating, we need a dialog layout</span></span><br><span class="line">        <span class="keyword">if</span> (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = <span class="keyword">new</span> TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogCustomTitleDecorLayout, res, <span class="keyword">true</span>);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            layoutResource = R.layout.screen_custom_title;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// XXX Remove this once action bar supports these features.</span></span><br><span class="line">        removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_NO_TITLE)) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// If no other features and not embedded, only need a title.</span></span><br><span class="line">        <span class="comment">// If the window is floating, we need a dialog layout</span></span><br><span class="line">        <span class="keyword">if</span> (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = <span class="keyword">new</span> TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogTitleDecorLayout, res, <span class="keyword">true</span>);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_ACTION_BAR)) != <span class="number">0</span>) &#123;</span><br><span class="line">            layoutResource = a.getResourceId(</span><br><span class="line">                    R.styleable.Window_windowActionBarFullscreenDecorLayout,</span><br><span class="line">                    R.layout.screen_action_bar);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            layoutResource = R.layout.screen_title;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// System.out.println("Title!");</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_ACTION_MODE_OVERLAY)) != <span class="number">0</span>) &#123;</span><br><span class="line">        layoutResource = R.layout.screen_simple_overlay_action_mode;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Embedded, so no decoration is needed.</span></span><br><span class="line">        layoutResource = R.layout.screen_simple;</span><br><span class="line">        <span class="comment">// System.out.println("Simple!");</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mDecor.startChanging();</span><br><span class="line">    mDecor.onResourcesLoaded(mLayoutInflater, layoutResource);</span><br><span class="line"></span><br><span class="line">    ViewGroup contentParent = (ViewGroup)findViewById(ID_ANDROID_CONTENT);</span><br><span class="line">    <span class="keyword">if</span> (contentParent == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"Window couldn't find content container view"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_INDETERMINATE_PROGRESS)) != <span class="number">0</span>) &#123;</span><br><span class="line">        ProgressBar progress = getCircularProgressBar(<span class="keyword">false</span>);</span><br><span class="line">        <span class="keyword">if</span> (progress != <span class="keyword">null</span>) &#123;</span><br><span class="line">            progress.setIndeterminate(<span class="keyword">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((features &amp; (<span class="number">1</span> &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) != <span class="number">0</span>) &#123;</span><br><span class="line">        registerSwipeCallbacks(contentParent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Remaining setup -- of background and title -- that only applies</span></span><br><span class="line">    <span class="comment">// to top-level windows.</span></span><br><span class="line">    <span class="keyword">if</span> (getContainer() == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> Drawable background;</span><br><span class="line">        <span class="keyword">if</span> (mBackgroundResource != <span class="number">0</span>) &#123;</span><br><span class="line">            background = getContext().getDrawable(mBackgroundResource);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            background = mBackgroundDrawable;</span><br><span class="line">        &#125;</span><br><span class="line">        mDecor.setWindowBackground(background);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> Drawable frame;</span><br><span class="line">        <span class="keyword">if</span> (mFrameResource != <span class="number">0</span>) &#123;</span><br><span class="line">            frame = getContext().getDrawable(mFrameResource);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            frame = <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        mDecor.setWindowFrame(frame);</span><br><span class="line"></span><br><span class="line">        mDecor.setElevation(mElevation);</span><br><span class="line">        mDecor.setClipToOutline(mClipToOutline);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mTitle != <span class="keyword">null</span>) &#123;</span><br><span class="line">            setTitle(mTitle);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mTitleColor == <span class="number">0</span>) &#123;</span><br><span class="line">            mTitleColor = mTextColor;</span><br><span class="line">        &#125;</span><br><span class="line">        setTitleColor(mTitleColor);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mDecor.finishChanging();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> contentParent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个方法比较长，主要是设置了window的flags和features，然后调用mDecor的onResourcesLoaded把layoutResource渲染出来并且添加为mDecor的子view，然后赋给mDecor的mContentRoot：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">onResourcesLoaded</span><span class="params">(LayoutInflater inflater, <span class="keyword">int</span> layoutResource)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mBackdropFrameRenderer != <span class="keyword">null</span>) &#123;</span><br><span class="line">        loadBackgroundDrawablesIfNeeded();</span><br><span class="line">        mBackdropFrameRenderer.onResourcesLoaded(</span><br><span class="line">                <span class="keyword">this</span>, mResizingBackgroundDrawable, mCaptionBackgroundDrawable,</span><br><span class="line">                mUserCaptionBackgroundDrawable, getCurrentColor(mStatusColorViewState),</span><br><span class="line">                getCurrentColor(mNavigationColorViewState));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mDecorCaptionView = createDecorCaptionView(inflater);</span><br><span class="line">    <span class="keyword">final</span> View root = inflater.inflate(layoutResource, <span class="keyword">null</span>);</span><br><span class="line">    <span class="keyword">if</span> (mDecorCaptionView != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mDecorCaptionView.getParent() == <span class="keyword">null</span>) &#123;</span><br><span class="line">            addView(mDecorCaptionView,</span><br><span class="line">                    <span class="keyword">new</span> ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">        &#125;</span><br><span class="line">        mDecorCaptionView.addView(root,</span><br><span class="line">                <span class="keyword">new</span> ViewGroup.MarginLayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Put it below the color views.</span></span><br><span class="line">        addView(root, <span class="number">0</span>, <span class="keyword">new</span> ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">    &#125;</span><br><span class="line">    mContentRoot = (ViewGroup) root;</span><br><span class="line">    initializeElevation();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接着找到id为content的FrameLayout赋给mContentParent，设置mDecor的background和title等。我们来看R.layout.screen_simple的内容：<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">LinearLayout</span> <span class="attr">xmlns:android</span>=<span class="string">"http://schemas.android.com/apk/res/android"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:fitsSystemWindows</span>=<span class="string">"true"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:orientation</span>=<span class="string">"vertical"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ViewStub</span> <span class="attr">android:id</span>=<span class="string">"@+id/action_mode_bar_stub"</span></span></span><br><span class="line"><span class="tag">              <span class="attr">android:inflatedId</span>=<span class="string">"@+id/action_mode_bar"</span></span></span><br><span class="line"><span class="tag">              <span class="attr">android:layout</span>=<span class="string">"@layout/action_mode_bar"</span></span></span><br><span class="line"><span class="tag">              <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">              <span class="attr">android:layout_height</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">              <span class="attr">android:theme</span>=<span class="string">"?attr/actionBarTheme"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">FrameLayout</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:id</span>=<span class="string">"@android:id/content"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:foregroundInsidePadding</span>=<span class="string">"false"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:foregroundGravity</span>=<span class="string">"fill_horizontal|top"</span></span></span><br><span class="line"><span class="tag">         <span class="attr">android:foreground</span>=<span class="string">"?android:attr/windowContentOverlay"</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">LinearLayout</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>可见DecorView的content root是一个LinearLayout，其中包含一个ViewStub和一个id为<code>@android:id/content</code>的FrameLayout。我们用layout inspector随意打开一个activity的布局即可验证：</p>
+<p><img src="/images/viewTree.png" alt></p>
+<p>我们setContentView实际上就是设置了content这个id的view，但是id为<code>action_mode_bar_stub</code>的viewstub是干啥的呢？以前上学时候的Android机比较常见的一个交互是在标题栏上弹出菜单项，如下：</p>
+<p><img src="/images/action_mode.png" alt></p>
+<p>这个<code>action_mode_bar_stub</code>实际上就是这种菜单，详见：<a href="https://developer.android.com/guide/topics/ui/menus#context-menu" target="_blank" rel="noopener">上下文菜单</a></p>
+<p>到这里只是完成了DecorView的创建并初始化，什么时候添加到屏幕上展示的呢？</p>
+<h3 id="DecorView如何展示在用户面前"><a href="#DecorView如何展示在用户面前" class="headerlink" title="DecorView如何展示在用户面前"></a>DecorView如何展示在用户面前</h3><p>我们知道activity onResume后已经展示在前台了，那么看ActivityThread的<code>handleResumeActivity</code>：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleResumeActivity</span><span class="params">(IBinder token, <span class="keyword">boolean</span> finalStateRequest, <span class="keyword">boolean</span> isForward,</span></span></span><br><span class="line"><span class="function"><span class="params">        String reason)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// If we are getting ready to gc after going to the background, well</span></span><br><span class="line">    <span class="comment">// we are back active so skip it.</span></span><br><span class="line">    unscheduleGcIdler();</span><br><span class="line">    mSomeActivitiesChanged = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// TODO Push resumeArgs into the activity for consideration</span></span><br><span class="line">    <span class="keyword">final</span> ActivityClientRecord r = performResumeActivity(token, finalStateRequest, reason);</span><br><span class="line">    <span class="keyword">if</span> (r == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// We didn't actually resume the activity, so skipping any follow-up actions.</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Activity a = r.activity;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (localLOGV) &#123;</span><br><span class="line">        Slog.v(TAG, <span class="string">"Resume "</span> + r + <span class="string">" started activity: "</span> + a.mStartedActivity</span><br><span class="line">                + <span class="string">", hideForNow: "</span> + r.hideForNow + <span class="string">", finished: "</span> + a.mFinished);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> forwardBit = isForward</span><br><span class="line">            ? WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If the window hasn't yet been added to the window manager,</span></span><br><span class="line">    <span class="comment">// and this guy didn't finish itself or start another activity,</span></span><br><span class="line">    <span class="comment">// then go ahead and add the window.</span></span><br><span class="line">    <span class="keyword">boolean</span> willBeVisible = !a.mStartedActivity;</span><br><span class="line">    <span class="keyword">if</span> (!willBeVisible) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            willBeVisible = ActivityManager.getService().willActivityBeVisible(</span><br><span class="line">                    a.getActivityToken());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> e.rethrowFromSystemServer();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (r.window == <span class="keyword">null</span> &amp;&amp; !a.mFinished &amp;&amp; willBeVisible) &#123;</span><br><span class="line">        r.window = r.activity.getWindow();</span><br><span class="line">        View decor = r.window.getDecorView();</span><br><span class="line">        decor.setVisibility(View.INVISIBLE);</span><br><span class="line">        ViewManager wm = a.getWindowManager();</span><br><span class="line">        WindowManager.LayoutParams l = r.window.getAttributes();</span><br><span class="line">        a.mDecor = decor;</span><br><span class="line">        l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;</span><br><span class="line">        l.softInputMode |= forwardBit;</span><br><span class="line">        <span class="keyword">if</span> (r.mPreserveWindow) &#123;</span><br><span class="line">            a.mWindowAdded = <span class="keyword">true</span>;</span><br><span class="line">            r.mPreserveWindow = <span class="keyword">false</span>;</span><br><span class="line">            <span class="comment">// Normally the ViewRoot sets up callbacks with the Activity</span></span><br><span class="line">            <span class="comment">// in addView-&gt;ViewRootImpl#setView. If we are instead reusing</span></span><br><span class="line">            <span class="comment">// the decor view we have to notify the view root that the</span></span><br><span class="line">            <span class="comment">// callbacks may have changed.</span></span><br><span class="line">            ViewRootImpl impl = decor.getViewRootImpl();</span><br><span class="line">            <span class="keyword">if</span> (impl != <span class="keyword">null</span>) &#123;</span><br><span class="line">                impl.notifyChildRebuilt();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (a.mVisibleFromClient) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!a.mWindowAdded) &#123;</span><br><span class="line">                a.mWindowAdded = <span class="keyword">true</span>;</span><br><span class="line">                wm.addView(decor, l);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// The activity will get a callback for this &#123;@link LayoutParams&#125; change</span></span><br><span class="line">                <span class="comment">// earlier. However, at that time the decor will not be set (this is set</span></span><br><span class="line">                <span class="comment">// in this method), so no action will be taken. This call ensures the</span></span><br><span class="line">                <span class="comment">// callback occurs with the decor set.</span></span><br><span class="line">                a.onWindowAttributesChanged(l);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// If the window has already been added, but during resume</span></span><br><span class="line">        <span class="comment">// we started another activity, then don't yet make the</span></span><br><span class="line">        <span class="comment">// window visible.</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!willBeVisible) &#123;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Slog.v(TAG, <span class="string">"Launch "</span> + r + <span class="string">" mStartedActivity set"</span>);</span><br><span class="line">        r.hideForNow = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Get rid of anything left hanging around.</span></span><br><span class="line">    cleanUpPendingRemoveWindows(r, <span class="keyword">false</span> <span class="comment">/* force */</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The window is now visible if it has been added, we are not</span></span><br><span class="line">    <span class="comment">// simply finishing, and we are not starting another activity.</span></span><br><span class="line">    <span class="keyword">if</span> (!r.activity.mFinished &amp;&amp; willBeVisible &amp;&amp; r.activity.mDecor != <span class="keyword">null</span> &amp;&amp; !r.hideForNow) &#123;</span><br><span class="line">        <span class="keyword">if</span> (r.newConfig != <span class="keyword">null</span>) &#123;</span><br><span class="line">            performConfigurationChangedForActivity(r, r.newConfig);</span><br><span class="line">            <span class="keyword">if</span> (DEBUG_CONFIGURATION) &#123;</span><br><span class="line">                Slog.v(TAG, <span class="string">"Resuming activity "</span> + r.activityInfo.name + <span class="string">" with newConfig "</span></span><br><span class="line">                        + r.activity.mCurrentConfig);</span><br><span class="line">            &#125;</span><br><span class="line">            r.newConfig = <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Slog.v(TAG, <span class="string">"Resuming "</span> + r + <span class="string">" with isForward="</span> + isForward);</span><br><span class="line">        WindowManager.LayoutParams l = r.window.getAttributes();</span><br><span class="line">        <span class="keyword">if</span> ((l.softInputMode</span><br><span class="line">                &amp; WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION)</span><br><span class="line">                != forwardBit) &#123;</span><br><span class="line">            l.softInputMode = (l.softInputMode</span><br><span class="line">                    &amp; (~WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION))</span><br><span class="line">                    | forwardBit;</span><br><span class="line">            <span class="keyword">if</span> (r.activity.mVisibleFromClient) &#123;</span><br><span class="line">                ViewManager wm = a.getWindowManager();</span><br><span class="line">                View decor = r.window.getDecorView();</span><br><span class="line">                wm.updateViewLayout(decor, l);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        r.activity.mVisibleFromServer = <span class="keyword">true</span>;</span><br><span class="line">        mNumVisibleActivities++;</span><br><span class="line">        <span class="keyword">if</span> (r.activity.mVisibleFromClient) &#123;</span><br><span class="line">            r.activity.makeVisible();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r.nextIdle = mNewActivities;</span><br><span class="line">    mNewActivities = r;</span><br><span class="line">    <span class="keyword">if</span> (localLOGV) Slog.v(TAG, <span class="string">"Scheduling idle handler for "</span> + r);</span><br><span class="line">    Looper.myQueue().addIdleHandler(<span class="keyword">new</span> Idler());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可知通过<code>wm.addView(decor, l)</code>将decorView展示在了前台，其中l是layoutparams，其type字段为<code>TYPE_BASE_APPLICATION</code>。而windowManagerImpl又通过WindowManagerGlobal调用addView：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addView</span><span class="params">(@NonNull View view, @NonNull ViewGroup.LayoutParams params)</span> </span>&#123;</span><br><span class="line">    applyDefaultToken(params);</span><br><span class="line">    mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>WindowManagerGlobal的addView主要是创建了一个ViewRootImpl，然后将view，root，layoutparams以相同的index添加到维护的三个ArrayList中：</p>
+<p><img src="/images/wmg-addView.png" alt></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@UnsupportedAppUsage</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ArrayList&lt;View&gt; mViews = <span class="keyword">new</span> ArrayList&lt;View&gt;();</span><br><span class="line"><span class="meta">@UnsupportedAppUsage</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ArrayList&lt;ViewRootImpl&gt; mRoots = <span class="keyword">new</span> ArrayList&lt;ViewRootImpl&gt;();</span><br><span class="line"><span class="meta">@UnsupportedAppUsage</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ArrayList&lt;WindowManager.LayoutParams&gt; mParams =</span><br><span class="line">        <span class="keyword">new</span> ArrayList&lt;WindowManager.LayoutParams&gt;();</span><br></pre></td></tr></table></figure>
+<p>随后通过ViewRootImpl的setView方法调了一次<code>requestLayout</code>，<code>requestLayout</code>调用<code>scheduleTraversals()</code>,往message queue中加入SyncBarrier消息，并在接下来一帧执行<code>mTraversalRunnable</code>:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@UnsupportedAppUsage</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">scheduleTraversals</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!mTraversalScheduled) &#123;</span><br><span class="line">        mTraversalScheduled = <span class="keyword">true</span>;</span><br><span class="line">        mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();</span><br><span class="line">        mChoreographer.postCallback(</span><br><span class="line">                Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, <span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">if</span> (!mUnbufferedInputDispatch) &#123;</span><br><span class="line">            scheduleConsumeBatchedInput();</span><br><span class="line">        &#125;</span><br><span class="line">        notifyRendererOfFramePending();</span><br><span class="line">        pokeDrawLockIfNeeded();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>mTraversalRunnable</code>里做了什么呢？<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">TraversalRunnable</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        doTraversal();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">final</span> TraversalRunnable mTraversalRunnable = <span class="keyword">new</span> TraversalRunnable();</span><br><span class="line">.......</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">doTraversal</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mTraversalScheduled) &#123;</span><br><span class="line">        mTraversalScheduled = <span class="keyword">false</span>;</span><br><span class="line">        mHandler.getLooper().getQueue().removeSyncBarrier(mTraversalBarrier);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mProfile) &#123;</span><br><span class="line">            Debug.startMethodTracing(<span class="string">"ViewAncestor"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        performTraversals();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mProfile) &#123;</span><br><span class="line">            Debug.stopMethodTracing();</span><br><span class="line">            mProfile = <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>把刚才post的SyncBarrier消息移除，然后执行<code>performTraversals</code>，同时在debug模式下执行method tracing。<br><code>performTraversals</code>方法很长，主要是执行了<code>performMeasure</code>,<code>performLayout</code>,<code>performDraw</code>方法:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br></pre></td><td class="code"><pre><span class="line">.......</span><br><span class="line">            <span class="keyword">if</span> (!mStopped || mReportNextDraw) &#123;</span><br><span class="line">                <span class="keyword">boolean</span> focusChangedDueToTouchMode = ensureTouchModeLocally(</span><br><span class="line">                        (relayoutResult&amp;WindowManagerGlobal.RELAYOUT_RES_IN_TOUCH_MODE) != <span class="number">0</span>);</span><br><span class="line">                <span class="keyword">if</span> (focusChangedDueToTouchMode || mWidth != host.getMeasuredWidth()</span><br><span class="line">                        || mHeight != host.getMeasuredHeight() || contentInsetsChanged ||</span><br><span class="line">                        updatedConfiguration) &#123;</span><br><span class="line">                    <span class="keyword">int</span> childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);</span><br><span class="line">                    <span class="keyword">int</span> childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (DEBUG_LAYOUT) Log.v(mTag, <span class="string">"Ooops, something changed!  mWidth="</span></span><br><span class="line">                            + mWidth + <span class="string">" measuredWidth="</span> + host.getMeasuredWidth()</span><br><span class="line">                            + <span class="string">" mHeight="</span> + mHeight</span><br><span class="line">                            + <span class="string">" measuredHeight="</span> + host.getMeasuredHeight()</span><br><span class="line">                            + <span class="string">" coveredInsetsChanged="</span> + contentInsetsChanged);</span><br><span class="line"></span><br><span class="line">                     <span class="comment">// Ask host how big it wants to be</span></span><br><span class="line">                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line"></span><br><span class="line">                    <span class="comment">// Implementation of weights from WindowManager.LayoutParams</span></span><br><span class="line">                    <span class="comment">// We just grow the dimensions as needed and re-measure if</span></span><br><span class="line">                    <span class="comment">// needs be</span></span><br><span class="line">                    <span class="keyword">int</span> width = host.getMeasuredWidth();</span><br><span class="line">                    <span class="keyword">int</span> height = host.getMeasuredHeight();</span><br><span class="line">                    <span class="keyword">boolean</span> measureAgain = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (lp.horizontalWeight &gt; <span class="number">0.0f</span>) &#123;</span><br><span class="line">                        width += (<span class="keyword">int</span>) ((mWidth - width) * lp.horizontalWeight);</span><br><span class="line">                        childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(width,</span><br><span class="line">                                MeasureSpec.EXACTLY);</span><br><span class="line">                        measureAgain = <span class="keyword">true</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (lp.verticalWeight &gt; <span class="number">0.0f</span>) &#123;</span><br><span class="line">                        height += (<span class="keyword">int</span>) ((mHeight - height) * lp.verticalWeight);</span><br><span class="line">                        childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(height,</span><br><span class="line">                                MeasureSpec.EXACTLY);</span><br><span class="line">                        measureAgain = <span class="keyword">true</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (measureAgain) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (DEBUG_LAYOUT) Log.v(mTag,</span><br><span class="line">                                <span class="string">"And hey let's measure once more: width="</span> + width</span><br><span class="line">                                + <span class="string">" height="</span> + height);</span><br><span class="line">                        performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    layoutRequested = <span class="keyword">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Not the first pass and no window/insets/visibility change but the window</span></span><br><span class="line">            <span class="comment">// may have moved and we need check that and if so to update the left and right</span></span><br><span class="line">            <span class="comment">// in the attach info. We translate only the window frame since on window move</span></span><br><span class="line">            <span class="comment">// the window manager tells us only for the new frame but the insets are the</span></span><br><span class="line">            <span class="comment">// same and we do not want to translate them more than once.</span></span><br><span class="line">            maybeHandleWindowMove(frame);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">boolean</span> didLayout = layoutRequested &amp;&amp; (!mStopped || mReportNextDraw);</span><br><span class="line">        <span class="keyword">boolean</span> triggerGlobalLayoutListener = didLayout</span><br><span class="line">                || mAttachInfo.mRecomputeGlobalAttributes;</span><br><span class="line">        <span class="keyword">if</span> (didLayout) &#123;</span><br><span class="line">            performLayout(lp, mWidth, mHeight);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// By this point all views have been sized and positioned</span></span><br><span class="line">            <span class="comment">// We can compute the transparent area</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> ((host.mPrivateFlags &amp; View.PFLAG_REQUEST_TRANSPARENT_REGIONS) != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// start out transparent</span></span><br><span class="line">                <span class="comment">// <span class="doctag">TODO:</span> AVOID THAT CALL BY CACHING THE RESULT?</span></span><br><span class="line">                host.getLocationInWindow(mTmpLocation);</span><br><span class="line">                mTransparentRegion.set(mTmpLocation[<span class="number">0</span>], mTmpLocation[<span class="number">1</span>],</span><br><span class="line">                        mTmpLocation[<span class="number">0</span>] + host.mRight - host.mLeft,</span><br><span class="line">                        mTmpLocation[<span class="number">1</span>] + host.mBottom - host.mTop);</span><br><span class="line"></span><br><span class="line">                host.gatherTransparentRegion(mTransparentRegion);</span><br><span class="line">                <span class="keyword">if</span> (mTranslator != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    mTranslator.translateRegionInWindowToScreen(mTransparentRegion);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (!mTransparentRegion.equals(mPreviousTransparentRegion)) &#123;</span><br><span class="line">                    mPreviousTransparentRegion.set(mTransparentRegion);</span><br><span class="line">                    mFullRedrawNeeded = <span class="keyword">true</span>;</span><br><span class="line">                    <span class="comment">// reconfigure window manager</span></span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        mWindowSession.setTransparentRegion(mWindow, mTransparentRegion);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (DBG) &#123;</span><br><span class="line">                System.out.println(<span class="string">"======================================"</span>);</span><br><span class="line">                System.out.println(<span class="string">"performTraversals -- after setFrame"</span>);</span><br><span class="line">                host.debug();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (triggerGlobalLayoutListener) &#123;</span><br><span class="line">            mAttachInfo.mRecomputeGlobalAttributes = <span class="keyword">false</span>;</span><br><span class="line">            mAttachInfo.mTreeObserver.dispatchOnGlobalLayout();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (computesInternalInsets) &#123;</span><br><span class="line">            <span class="comment">// Clear the original insets.</span></span><br><span class="line">            <span class="keyword">final</span> ViewTreeObserver.InternalInsetsInfo insets = mAttachInfo.mGivenInternalInsets;</span><br><span class="line">            insets.reset();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Compute new insets in place.</span></span><br><span class="line">            mAttachInfo.mTreeObserver.dispatchOnComputeInternalInsets(insets);</span><br><span class="line">            mAttachInfo.mHasNonEmptyGivenInternalInsets = !insets.isEmpty();</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Tell the window manager.</span></span><br><span class="line">            <span class="keyword">if</span> (insetsPending || !mLastGivenInsets.equals(insets)) &#123;</span><br><span class="line">                mLastGivenInsets.set(insets);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Translate insets to screen coordinates if needed.</span></span><br><span class="line">                <span class="keyword">final</span> Rect contentInsets;</span><br><span class="line">                <span class="keyword">final</span> Rect visibleInsets;</span><br><span class="line">                <span class="keyword">final</span> Region touchableRegion;</span><br><span class="line">                <span class="keyword">if</span> (mTranslator != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    contentInsets = mTranslator.getTranslatedContentInsets(insets.contentInsets);</span><br><span class="line">                    visibleInsets = mTranslator.getTranslatedVisibleInsets(insets.visibleInsets);</span><br><span class="line">                    touchableRegion = mTranslator.getTranslatedTouchableArea(insets.touchableRegion);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    contentInsets = insets.contentInsets;</span><br><span class="line">                    visibleInsets = insets.visibleInsets;</span><br><span class="line">                    touchableRegion = insets.touchableRegion;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    mWindowSession.setInsets(mWindow, insets.mTouchableInsets,</span><br><span class="line">                            contentInsets, visibleInsets, touchableRegion);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mFirst) &#123;</span><br><span class="line">            <span class="keyword">if</span> (sAlwaysAssignFocus || !isInTouchMode()) &#123;</span><br><span class="line">                <span class="comment">// handle first focus request</span></span><br><span class="line">                <span class="keyword">if</span> (DEBUG_INPUT_RESIZE) &#123;</span><br><span class="line">                    Log.v(mTag, <span class="string">"First: mView.hasFocus()="</span> + mView.hasFocus());</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (mView != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!mView.hasFocus()) &#123;</span><br><span class="line">                        mView.restoreDefaultFocus();</span><br><span class="line">                        <span class="keyword">if</span> (DEBUG_INPUT_RESIZE) &#123;</span><br><span class="line">                            Log.v(mTag, <span class="string">"First: requested focused view="</span> + mView.findFocus());</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        <span class="keyword">if</span> (DEBUG_INPUT_RESIZE) &#123;</span><br><span class="line">                            Log.v(mTag, <span class="string">"First: existing focused view="</span> + mView.findFocus());</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Some views (like ScrollView) won't hand focus to descendants that aren't within</span></span><br><span class="line">                <span class="comment">// their viewport. Before layout, there's a good change these views are size 0</span></span><br><span class="line">                <span class="comment">// which means no children can get focus. After layout, this view now has size, but</span></span><br><span class="line">                <span class="comment">// is not guaranteed to hand-off focus to a focusable child (specifically, the edge-</span></span><br><span class="line">                <span class="comment">// case where the child has a size prior to layout and thus won't trigger</span></span><br><span class="line">                <span class="comment">// focusableViewAvailable).</span></span><br><span class="line">                View focused = mView.findFocus();</span><br><span class="line">                <span class="keyword">if</span> (focused <span class="keyword">instanceof</span> ViewGroup</span><br><span class="line">                        &amp;&amp; ((ViewGroup) focused).getDescendantFocusability()</span><br><span class="line">                                == ViewGroup.FOCUS_AFTER_DESCENDANTS) &#123;</span><br><span class="line">                    focused.restoreDefaultFocus();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">boolean</span> changedVisibility = (viewVisibilityChanged || mFirst) &amp;&amp; isViewVisible;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">boolean</span> hasWindowFocus = mAttachInfo.mHasWindowFocus &amp;&amp; isViewVisible;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">boolean</span> regainedFocus = hasWindowFocus &amp;&amp; mLostWindowFocus;</span><br><span class="line">        <span class="keyword">if</span> (regainedFocus) &#123;</span><br><span class="line">            mLostWindowFocus = <span class="keyword">false</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!hasWindowFocus &amp;&amp; mHadWindowFocus) &#123;</span><br><span class="line">            mLostWindowFocus = <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (changedVisibility || regainedFocus) &#123;</span><br><span class="line">            <span class="comment">// Toasts are presented as notifications - don't present them as windows as well</span></span><br><span class="line">            <span class="keyword">boolean</span> isToast = (mWindowAttributes == <span class="keyword">null</span>) ? <span class="keyword">false</span></span><br><span class="line">                    : (mWindowAttributes.type == WindowManager.LayoutParams.TYPE_TOAST);</span><br><span class="line">            <span class="keyword">if</span> (!isToast) &#123;</span><br><span class="line">                host.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mFirst = <span class="keyword">false</span>;</span><br><span class="line">        mWillDrawSoon = <span class="keyword">false</span>;</span><br><span class="line">        mNewSurfaceNeeded = <span class="keyword">false</span>;</span><br><span class="line">        mActivityRelaunched = <span class="keyword">false</span>;</span><br><span class="line">        mViewVisibility = viewVisibility;</span><br><span class="line">        mHadWindowFocus = hasWindowFocus;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (hasWindowFocus &amp;&amp; !isInLocalFocusMode()) &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">boolean</span> imTarget = WindowManager.LayoutParams</span><br><span class="line">                    .mayUseInputMethod(mWindowAttributes.flags);</span><br><span class="line">            <span class="keyword">if</span> (imTarget != mLastWasImTarget) &#123;</span><br><span class="line">                mLastWasImTarget = imTarget;</span><br><span class="line">                InputMethodManager imm = InputMethodManager.peekInstance();</span><br><span class="line">                <span class="keyword">if</span> (imm != <span class="keyword">null</span> &amp;&amp; imTarget) &#123;</span><br><span class="line">                    imm.onPreWindowFocus(mView, hasWindowFocus);</span><br><span class="line">                    imm.onPostWindowFocus(mView, mView.findFocus(),</span><br><span class="line">                            mWindowAttributes.softInputMode,</span><br><span class="line">                            !mHasHadWindowFocus, mWindowAttributes.flags);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Remember if we must report the next draw.</span></span><br><span class="line">        <span class="keyword">if</span> ((relayoutResult &amp; WindowManagerGlobal.RELAYOUT_RES_FIRST_TIME) != <span class="number">0</span>) &#123;</span><br><span class="line">            reportNextDraw();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">boolean</span> cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw() || !isViewVisible;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!cancelDraw &amp;&amp; !newSurface) &#123;</span><br><span class="line">            <span class="keyword">if</span> (mPendingTransitions != <span class="keyword">null</span> &amp;&amp; mPendingTransitions.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; mPendingTransitions.size(); ++i) &#123;</span><br><span class="line">                    mPendingTransitions.get(i).startChangingAnimations();</span><br><span class="line">                &#125;</span><br><span class="line">                mPendingTransitions.clear();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            performDraw();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (isViewVisible) &#123;</span><br><span class="line">                <span class="comment">// Try again</span></span><br><span class="line">                scheduleTraversals();</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (mPendingTransitions != <span class="keyword">null</span> &amp;&amp; mPendingTransitions.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; mPendingTransitions.size(); ++i) &#123;</span><br><span class="line">                    mPendingTransitions.get(i).endChangingAnimations();</span><br><span class="line">                &#125;</span><br><span class="line">                mPendingTransitions.clear();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mIsInTraversal = <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>可知在<code>performTraversal</code>中如果焦点因为触摸变了，或者宽高有变，或者insets有变，或者配置更新都会触发<code>performMeasure</code>,而且如果设置了weight，会多执行一次<code>performMeasure</code>。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">performMeasure</span><span class="params">(<span class="keyword">int</span> childWidthMeasureSpec, <span class="keyword">int</span> childHeightMeasureSpec)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mView == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Trace.traceBegin(Trace.TRACE_TAG_VIEW, <span class="string">"measure"</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接下来就是<code>performLayout</code>，布局所有的view，然后计算透明区域：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">performLayout</span><span class="params">(WindowManager.LayoutParams lp, <span class="keyword">int</span> desiredWindowWidth,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> desiredWindowHeight)</span> </span>&#123;</span><br><span class="line">    mLayoutRequested = <span class="keyword">false</span>;</span><br><span class="line">    mScrollMayChange = <span class="keyword">true</span>;</span><br><span class="line">    mInLayout = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> View host = mView;</span><br><span class="line">    <span class="keyword">if</span> (host == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (DEBUG_ORIENTATION || DEBUG_LAYOUT) &#123;</span><br><span class="line">        Log.v(mTag, <span class="string">"Laying out "</span> + host + <span class="string">" to ("</span> +</span><br><span class="line">                host.getMeasuredWidth() + <span class="string">", "</span> + host.getMeasuredHeight() + <span class="string">")"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Trace.traceBegin(Trace.TRACE_TAG_VIEW, <span class="string">"layout"</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        host.layout(<span class="number">0</span>, <span class="number">0</span>, host.getMeasuredWidth(), host.getMeasuredHeight());</span><br><span class="line"></span><br><span class="line">        mInLayout = <span class="keyword">false</span>;</span><br><span class="line">        <span class="keyword">int</span> numViewsRequestingLayout = mLayoutRequesters.size();</span><br><span class="line">        <span class="keyword">if</span> (numViewsRequestingLayout &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// requestLayout() was called during layout.</span></span><br><span class="line">            <span class="comment">// If no layout-request flags are set on the requesting views, there is no problem.</span></span><br><span class="line">            <span class="comment">// If some requests are still pending, then we need to clear those flags and do</span></span><br><span class="line">            <span class="comment">// a full request/measure/layout pass to handle this situation.</span></span><br><span class="line">            ArrayList&lt;View&gt; validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters,</span><br><span class="line">                    <span class="keyword">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (validLayoutRequesters != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// Set this flag to indicate that any further requests are happening during</span></span><br><span class="line">                <span class="comment">// the second pass, which may result in posting those requests to the next</span></span><br><span class="line">                <span class="comment">// frame instead</span></span><br><span class="line">                mHandlingLayoutInLayoutRequest = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Process fresh layout requests, then measure and layout</span></span><br><span class="line">                <span class="keyword">int</span> numValidRequests = validLayoutRequesters.size();</span><br><span class="line">                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numValidRequests; ++i) &#123;</span><br><span class="line">                    <span class="keyword">final</span> View view = validLayoutRequesters.get(i);</span><br><span class="line">                    Log.w(<span class="string">"View"</span>, <span class="string">"requestLayout() improperly called by "</span> + view +</span><br><span class="line">                            <span class="string">" during layout: running second layout pass"</span>);</span><br><span class="line">                    view.requestLayout();</span><br><span class="line">                &#125;</span><br><span class="line">                measureHierarchy(host, lp, mView.getContext().getResources(),</span><br><span class="line">                        desiredWindowWidth, desiredWindowHeight);</span><br><span class="line">                mInLayout = <span class="keyword">true</span>;</span><br><span class="line">                host.layout(<span class="number">0</span>, <span class="number">0</span>, host.getMeasuredWidth(), host.getMeasuredHeight());</span><br><span class="line"></span><br><span class="line">                mHandlingLayoutInLayoutRequest = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Check the valid requests again, this time without checking/clearing the</span></span><br><span class="line">                <span class="comment">// layout flags, since requests happening during the second pass get noop'd</span></span><br><span class="line">                validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters, <span class="keyword">true</span>);</span><br><span class="line">                <span class="keyword">if</span> (validLayoutRequesters != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">final</span> ArrayList&lt;View&gt; finalRequesters = validLayoutRequesters;</span><br><span class="line">                    <span class="comment">// Post second-pass requests to the next frame</span></span><br><span class="line">                    getRunQueue().post(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                            <span class="keyword">int</span> numValidRequests = finalRequesters.size();</span><br><span class="line">                            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numValidRequests; ++i) &#123;</span><br><span class="line">                                <span class="keyword">final</span> View view = finalRequesters.get(i);</span><br><span class="line">                                Log.w(<span class="string">"View"</span>, <span class="string">"requestLayout() improperly called by "</span> + view +</span><br><span class="line">                                        <span class="string">" during second layout pass: posting in next frame"</span>);</span><br><span class="line">                                view.requestLayout();</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line">    &#125;</span><br><span class="line">    mInLayout = <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后是<code>performDraw</code>，其中调用了<code>draw</code>方法。这里不再细看。最后将<code>mIsInTraversal</code>置为false，标记一次traversal的完成。上述即是activity页面展示的粗略过程。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/15/JVM概述/" rel="next" title="JVM概述">
+                <i class="fa fa-chevron-left"></i> JVM概述
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/15/Choreographer/" rel="prev" title="Choreographer源码分析">
+                Choreographer源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/avatar_bboylin.jpeg" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#从SetContentView说起"><span class="nav-number">2.</span> <span class="nav-text">从SetContentView说起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DecorView如何展示在用户面前"><span class="nav-number">3.</span> <span class="nav-text">DecorView如何展示在用户面前</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/03/15/Activity页面显示流程/';
+          this.page.identifier = '2019/03/15/Activity页面显示流程/';
+          this.page.title = 'Activity页面展示过程';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

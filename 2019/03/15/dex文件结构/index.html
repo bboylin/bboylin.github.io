@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="dalvik,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
+<meta name="keywords" content="dalvik">
+<meta property="og:type" content="article">
+<meta property="og:title" content="dex文件结构">
+<meta property="og:url" content="https://bboylin.github.io/2019/03/15/dex文件结构/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://bboylin.github.io/images/dx.png">
+<meta property="og:image" content="https://bboylin.github.io/images/adb&dexdump.png">
+<meta property="og:image" content="https://bboylin.github.io/images/dexdump_options.png">
+<meta property="og:image" content="https://bboylin.github.io/images/magic.png">
+<meta property="og:image" content="https://bboylin.github.io/images/magic_ver.png">
+<meta property="og:image" content="https://bboylin.github.io/images/map_off.png">
+<meta property="og:image" content="https://bboylin.github.io/images/string_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/first_string_data_item.png">
+<meta property="og:image" content="https://bboylin.github.io/images/type_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/proto_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/method_ids.png">
+<meta property="og:updated_time" content="2018-04-05T10:48:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="dex文件结构">
+<meta name="twitter:description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
+<meta name="twitter:image" content="https://bboylin.github.io/images/dx.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/03/15/dex文件结构/">
+
+
+
+
+
+  <title>dex文件结构 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/03/15/dex文件结构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar_bboylin.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">dex文件结构</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-15T21:08:52+08:00">
+                2019-03-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/dalvik/" itemprop="url" rel="index">
+                    <span itemprop="name">dalvik</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/03/15/dex文件结构/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/03/15/dex文件结构/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文为作者原创，转载请注明出处。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。<a id="more"></a></p>
+<p>依旧是之前<code>Main.java</code>那段程序：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Main</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> m;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">inc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> m + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    	System.out.println(<span class="string">"hello world"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们先通过dx生成对应的dex文件：</p>
+<p><img src="/images/dx.png" alt></p>
+<p>再通过adb运行下看看对不对：</p>
+<p><img src="/images/adb&amp;dexdump.png" alt></p>
+<p>可以看到成功的输出了<code>hello world</code>，另外这里用到了<code>dexdump</code>将解析后的dex结构信息写入到dex.txt以辅助分析。dexdump有以下几个选项，可以帮助我们更好分析dex文件。</p>
+<p><img src="/images/dexdump_options.png" alt></p>
+<p>在分析Java字节码的时候我们同样用到了javap工具辅助分析字节码，是不是觉得很相似？废话不多说，我们开始吧。点击这里下载<a href="/assets/Main.dex">Main.dex</a>可以帮助你更好的跟上我的思路来分析。</p>
+<h2 id="大体结构"><a href="#大体结构" class="headerlink" title="大体结构"></a>大体结构</h2><p>首先先介绍下dex文件应用到的基础数据结构：byte,ubyte,short,ushort,int,uint,long,ulong这几个都没必要介绍了。加U的都是无符号类型。比较陌生的是这仨：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sleb128</td>
+<td>有符号leb128，长度可变，1~5B</td>
+</tr>
+<tr>
+<td>uleb128</td>
+<td>无符号leb128，长度可变，1~5B</td>
+</tr>
+<tr>
+<td>uleb128p1</td>
+<td>无符号leb128值加1，长度可变，1~5B</td>
+</tr>
+</tbody>
+</table>
+<p>关于<code>leb128</code>这种结构，它由1~5B组成，每个字节最高位如果为1，则表示存在下一字节，为0则表示这是最后一个字节。即最后一个字节最高位是0，其他字节最高位是1。每个字节的剩余 7 位均为有效负荷。</p>
+<p>接着来看dex文件大体的结构：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>header</td>
+<td>header_item</td>
+<td>标头</td>
+</tr>
+<tr>
+<td>string_ids</td>
+<td>string_id_item[]</td>
+<td>字符串标识符列表。这些是此文件使用的所有字符串的标识符，用于内部命名（例如类型描述符）或用作代码引用的常量对象。此列表必须使用 UTF-16 代码点值按字符串内容进行排序（不采用语言区域敏感方式），且不得包含任何重复条目。</td>
+</tr>
+<tr>
+<td>type_ids</td>
+<td>type_id_item[]</td>
+<td>类型标识符列表。这些是此文件引用的所有类型（类、数组或原始类型）的标识符（无论文件中是否已定义）。此列表必须按 string_id 索引进行排序，且不得包含任何重复条目。</td>
+</tr>
+<tr>
+<td>proto_ids</td>
+<td>proto_id_item[]</td>
+<td>方法原型标识符列表。这些是此文件引用的所有原型的标识符。此列表必须按返回类型（按 type_id索引排序）主要顺序进行排序，然后按参数列表（按 type_id索引排序的各个参数，采用字典排序方法）进行排序。该列表不得包含任何重复条目。</td>
+</tr>
+<tr>
+<td>field_ids</td>
+<td>field_id_item[]</td>
+<td>字段标识符列表。这些是此文件引用的所有字段的标识符（无论文件中是否已定义）。此列表必须进行排序，其中定义类型（按 type_id 索引排序）是主要顺序，字段名称（按 string_id 索引排序）是中间顺序，而类型（按 type_id 索引排序）是次要顺序。该列表不得包含任何重复条目。</td>
+</tr>
+<tr>
+<td>method_ids</td>
+<td>method_id_item[]</td>
+<td>方法标识符列表。这些是此文件引用的所有方法的标识符（无论文件中是否已定义）。此列表必须进行排序，其中定义类型（按 type_id 索引排序）是主要顺序，方法名称（按 string_id 索引排序）是中间顺序，而方法原型（按 proto_id 索引排序）是次要顺序。该列表不得包含任何重复条目。</td>
+</tr>
+<tr>
+<td>class_defs</td>
+<td>class_def_item[]</td>
+<td>类定义列表。这些类必须进行排序，以便所指定类的超类和已实现的接口比引用类更早出现在该列表中。此外，对于在该列表中多次出现的同名类，其定义是无效的。</td>
+</tr>
+<tr>
+<td>call_site_ids</td>
+<td>call_site_id_item[]</td>
+<td>调用站点标识符列表。这些是此文件引用的所有调用站点的标识符（无论文件中是否已定义）。此列表必须按 call_site_off 的升序进行排序。</td>
+</tr>
+<tr>
+<td>method_handles</td>
+<td>method_handle_item[]</td>
+<td>方法句柄列表。此文件引用的所有方法句柄的列表（无论文件中是否已定义）。此列表未进行排序，而且可能包含将在逻辑上对应于不同方法句柄实例的重复项。</td>
+</tr>
+<tr>
+<td>data</td>
+<td>ubyte[]</td>
+<td>数据区，包含上面所列表格的所有支持数据。不同的项有不同的对齐要求；如有必要，则在每个项之前插入填充字节，以实现所需的对齐效果。</td>
+</tr>
+<tr>
+<td>link_data</td>
+<td>ubyte[]</td>
+<td>静态链接文件中使用的数据。本文档尚未指定本区段中数据的格式。此区段在未链接文件中为空，而运行时实现可能会在适当的情况下使用这些数据。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="头部"><a href="#头部" class="headerlink" title="头部"></a>头部</h2><p>头部长度固定为<code>0x70</code>，其结构如下：</p>
+<table>
+<thead>
+<tr>
+<th>字段名称</th>
+<th>偏移值</th>
+<th>长度/byte</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>magic</td>
+<td>0x0</td>
+<td>8</td>
+<td>魔数</td>
+</tr>
+<tr>
+<td>checksum</td>
+<td>0x8</td>
+<td>4</td>
+<td>校验和</td>
+</tr>
+<tr>
+<td>signature</td>
+<td>0xc</td>
+<td>20</td>
+<td>SHA-1 签名</td>
+</tr>
+<tr>
+<td>file_size</td>
+<td>0x20</td>
+<td>4</td>
+<td>dex文件总长度</td>
+</tr>
+<tr>
+<td>header_size</td>
+<td>0x24</td>
+<td>4</td>
+<td>文件长度</td>
+</tr>
+<tr>
+<td>endian_tag</td>
+<td>0x28</td>
+<td>4</td>
+<td>标志字节顺序的常量</td>
+</tr>
+<tr>
+<td>link_size</td>
+<td>0x2c</td>
+<td>4</td>
+<td>链接段的大小，为0表示静态链接</td>
+</tr>
+<tr>
+<td>link_off</td>
+<td>0x30</td>
+<td>4</td>
+<td>链接段的开始位置</td>
+</tr>
+<tr>
+<td>map_off</td>
+<td>0x34</td>
+<td>4</td>
+<td>map数据基址</td>
+</tr>
+<tr>
+<td>string_ids_size</td>
+<td>0x38</td>
+<td>4</td>
+<td>字符串列表中字符串个数</td>
+</tr>
+<tr>
+<td>string_ids_off</td>
+<td>0x3c</td>
+<td>4</td>
+<td>字符串列表基址</td>
+</tr>
+<tr>
+<td>type_ids_size</td>
+<td>0x40</td>
+<td>4</td>
+<td>类列表里类型个数</td>
+</tr>
+<tr>
+<td>type_ids_off</td>
+<td>0x44</td>
+<td>4</td>
+<td>类列表基址</td>
+</tr>
+<tr>
+<td>proto_ids_size</td>
+<td>0x48</td>
+<td>4</td>
+<td>原型列表中原型个数</td>
+</tr>
+<tr>
+<td>proto_ids_off</td>
+<td>0x4c</td>
+<td>4</td>
+<td>原型列表基址</td>
+</tr>
+<tr>
+<td>field_ids_size</td>
+<td>0x50</td>
+<td>4</td>
+<td>字段列表里字段个数</td>
+</tr>
+<tr>
+<td>field_ids_off</td>
+<td>0x54</td>
+<td>4</td>
+<td>字段列表基址</td>
+</tr>
+<tr>
+<td>method_ids_size</td>
+<td>0x58</td>
+<td>4</td>
+<td>方法列表里方法个数</td>
+</tr>
+<tr>
+<td>method_ids_off</td>
+<td>0x5c</td>
+<td>4</td>
+<td>方法列表基址</td>
+</tr>
+<tr>
+<td>class_defs_size</td>
+<td>0x60</td>
+<td>4</td>
+<td>类定义列表中类个数</td>
+</tr>
+<tr>
+<td>class_defs_off</td>
+<td>0x64</td>
+<td>4</td>
+<td>类定义列表基址</td>
+</tr>
+<tr>
+<td>data_size</td>
+<td>0x68</td>
+<td>4</td>
+<td>数据段的大小，必须以4字节对齐</td>
+</tr>
+<tr>
+<td>data_off</td>
+<td>0x6c</td>
+<td>4</td>
+<td>数据段基址</td>
+</tr>
+</tbody>
+</table>
+<p>从<code>dalvik/libdex/DexFile.h</code>中也能看到其定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Direct-mapped "header_item" struct.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">DexHeader</span> &#123;</span></span><br><span class="line">    u1  magic[<span class="number">8</span>];           <span class="comment">/* includes version number */</span></span><br><span class="line">    u4  checksum;           <span class="comment">/* adler32 checksum */</span></span><br><span class="line">    u1  signature[kSHA1DigestLen]; <span class="comment">/* SHA-1 hash */</span></span><br><span class="line">    u4  fileSize;           <span class="comment">/* length of entire file */</span></span><br><span class="line">    u4  headerSize;         <span class="comment">/* offset to start of next section */</span></span><br><span class="line">    u4  endianTag;</span><br><span class="line">    u4  linkSize;</span><br><span class="line">    u4  linkOff;</span><br><span class="line">    u4  mapOff;</span><br><span class="line">    u4  stringIdsSize;</span><br><span class="line">    u4  stringIdsOff;</span><br><span class="line">    u4  typeIdsSize;</span><br><span class="line">    u4  typeIdsOff;</span><br><span class="line">    u4  protoIdsSize;</span><br><span class="line">    u4  protoIdsOff;</span><br><span class="line">    u4  fieldIdsSize;</span><br><span class="line">    u4  fieldIdsOff;</span><br><span class="line">    u4  methodIdsSize;</span><br><span class="line">    u4  methodIdsOff;</span><br><span class="line">    u4  classDefsSize;</span><br><span class="line">    u4  classDefsOff;</span><br><span class="line">    u4  dataSize;</span><br><span class="line">    u4  dataOff;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>下面对<code>Main.dex</code>分析其头部：</p>
+<p><img src="/images/magic.png" alt></p>
+<p>魔数通过查ASCII表可得为<code>dex\n035\0</code>。关于魔数可取的值在<code>dalvik/libdex/DexFile.h</code>中定义如下：</p>
+<p><img src="/images/magic_ver.png" alt></p>
+<p>注意：<code>dalvik/libdex/DexFile.h</code>中定义了很多dex文件的结构体，必要时可作为参考。</p>
+<p>接下来4个字节是文件校验码 ，使用alder32 算法校验文件除去 maigc ，checksum 外余下的所有文件区域 ，用于检查文件错误 。再接下去是signature , 使用 SHA-1 算法 hash 除去 magic ,checksum 和 signature 外余下的所有文件区域 ，用于唯一识别本文件 。</p>
+<p>接着看<code>file_size</code>是<code>3c03 0000</code>，即<code>0x033c</code>，也就是828个字节。<code>header_size</code>为<code>7000 0000</code>，也就是<code>0x70</code>，112字节。<code>endian_tag</code>为<code>0x12345678</code>，表示小端法。<code>link_size</code>和<code>link_off</code>都是<code>0000 0000</code>，<code>map_off</code>为<code>0x029c</code>，我们找到这个位置的4字节看看。<img src="/images/map_off.png" alt> 可见是<code>0x000d</code>，即13。首先先来看看map数据的格式，即<code>map_list</code>这个数据结构包含：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>size</td>
+<td>uint</td>
+<td>列表的大小</td>
+</tr>
+<tr>
+<td>list</td>
+<td>map_item[size]</td>
+<td>列表的元素</td>
+</tr>
+</tbody>
+</table>
+<p>其中<code>map_item</code>这个结构如下：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td>ushort</td>
+<td>项的类型；见<a href="https://source.android.com/devices/tech/dalvik/dex-format#type-codes" target="_blank" rel="noopener">官方文档</a></td>
+</tr>
+<tr>
+<td>unused</td>
+<td>ushort</td>
+<td>（未使用，只用来对齐字节）</td>
+</tr>
+<tr>
+<td>size</td>
+<td>uint</td>
+<td>在指定偏移量处找到的项数量</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>uint</td>
+<td>从文件开头到相关项的偏移量</td>
+</tr>
+</tbody>
+</table>
+<p>可见<code>map_list</code>的size为13，总共占字节数为<code>12*13+4=160</code>。头部剩下的条目可按此法依次分析，如下表：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>string_ids_size</td>
+<td>0x11</td>
+<td>字符串列表中字符串个数</td>
+</tr>
+<tr>
+<td>string_ids_off</td>
+<td>0x70</td>
+<td>字符串列表基址</td>
+</tr>
+<tr>
+<td>type_ids_size</td>
+<td>0x08</td>
+<td>类列表里类型个数</td>
+</tr>
+<tr>
+<td>type_ids_off</td>
+<td>0xb4</td>
+<td>类列表基址</td>
+</tr>
+<tr>
+<td>proto_ids_size</td>
+<td>0x04</td>
+<td>原型列表中原型个数</td>
+</tr>
+<tr>
+<td>proto_ids_off</td>
+<td>0xd4</td>
+<td>原型列表基址</td>
+</tr>
+<tr>
+<td>field_ids_size</td>
+<td>0x02</td>
+<td>字段列表里字段个数</td>
+</tr>
+<tr>
+<td>field_ids_off</td>
+<td>0x0104</td>
+<td>字段列表基址</td>
+</tr>
+<tr>
+<td>method_ids_size</td>
+<td>0x05</td>
+<td>方法列表里方法个数</td>
+</tr>
+<tr>
+<td>method_ids_off</td>
+<td>0x0114</td>
+<td>方法列表基址</td>
+</tr>
+<tr>
+<td>class_defs_size</td>
+<td>0x01</td>
+<td>类定义列表中类个数</td>
+</tr>
+<tr>
+<td>class_defs_off</td>
+<td>0x013c</td>
+<td>类定义列表基址</td>
+</tr>
+<tr>
+<td>data_size</td>
+<td>0x01e0</td>
+<td>数据段的大小，必须以4字节对齐</td>
+</tr>
+<tr>
+<td>data_off</td>
+<td>0x015c</td>
+<td>数据段基址</td>
+</tr>
+</tbody>
+</table>
+<h2 id="string-ids"><a href="#string-ids" class="headerlink" title="string_ids"></a>string_ids</h2><p>因为<code>string_ids</code>偏移地址为<code>0x70</code>，大小为17，所以可知其占的字节如下：</p>
+<p><img src="/images/string_ids.png" alt></p>
+<p>先来看第一个<code>string_id_item</code>所占的字节：<code>be01 0000</code>。在<code>DexFile.h</code>里也能看到<code>string_id_item</code>的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Direct-mapped "string_id_item".</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">DexStringId</span> &#123;</span></span><br><span class="line">    u4 stringDataOff;      <span class="comment">/* file offset to string_data_item */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>可知第一个<code>string_data_item</code>所在的偏移地址为<code>0x01be</code>，如下(到第一个为0的字节为止)：</p>
+<p><img src="/images/first_string_data_item.png" alt></p>
+<p>关于<code>string_data_item</code>的格式在官方文档中定义如下:</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>utf16_size</td>
+<td>uleb128</td>
+<td>此字符串的大小；以UTF-16代码单元（在许多系统中为“字符串长度”）为单位。也就是说，这是该字符串的解码长度（编码长度隐含在 0 字节的位置）。</td>
+</tr>
+<tr>
+<td>data</td>
+<td>ubyte[]</td>
+<td>一系列 MUTF-8 代码单元（又称八位字节），后跟一个值为 0 的字节。</td>
+</tr>
+</tbody>
+</table>
+<p>所以我们看到第一个字节为<code>0x06</code>，即<code>string_data</code>长度为6，接下来的<code>3c 696e 6974 3e</code>，查ASCII表可知为<code>&lt;init&gt;</code>。第二个string类似分析，找到<code>c601 0000</code>即<code>0x01c6</code>处的字节为<code>0149</code>，即长度为1，找到<code>0x49</code>对应的ASCII码知是I。剩下的15个string类似分析即可，所得17个string列表如下：</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>&lt;init&gt;</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>I</td>
+</tr>
+<tr>
+<td>2</td>
+<td>LMain;</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Ljava/io/PrintStream</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Ljava/lang/Object</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Ljava/lang/String</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Ljava/lang/System</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Main.java</td>
+</tr>
+<tr>
+<td>8</td>
+<td>V</td>
+</tr>
+<tr>
+<td>9</td>
+<td>VL</td>
+</tr>
+<tr>
+<td>10</td>
+<td>[Ljava/lang/String;</td>
+</tr>
+<tr>
+<td>11</td>
+<td>hello world</td>
+</tr>
+<tr>
+<td>12</td>
+<td>inc</td>
+</tr>
+<tr>
+<td>13</td>
+<td>m</td>
+</tr>
+<tr>
+<td>14</td>
+<td>main</td>
+</tr>
+<tr>
+<td>15</td>
+<td>out</td>
+</tr>
+<tr>
+<td>16</td>
+<td>println</td>
+</tr>
+</tbody>
+</table>
+<h2 id="type-ids"><a href="#type-ids" class="headerlink" title="type_ids"></a>type_ids</h2><p>关于<code>type_id_item</code>结构如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Direct-mapped "type_id_item".</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">DexTypeId</span> &#123;</span></span><br><span class="line">    u4  descriptorIdx;      <span class="comment">/* index into stringIds list for type descriptor */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>又根据之前的分析知道有8个<code>type_id_item</code>，基址为<code>0xb4</code>，如下：</p>
+<p><img src="/images/type_ids.png" alt></p>
+<p><code>descriptorIdx</code>的值为之前算过的string列表的索引，可见8个type分别是string中索引1-6,8,10的项。</p>
+<h2 id="proto-ids"><a href="#proto-ids" class="headerlink" title="proto_ids"></a>proto_ids</h2><p>之前算到有4个方法原型，偏移为<code>0xd4</code>，找到字节如下：</p>
+<p><img src="/images/proto_ids.png" alt></p>
+<p><code>proto_id_item</code>格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>shorty_idx</td>
+<td>uint</td>
+<td>此原型的简短式描述符字符串的string_ids列表中的索引。</td>
+</tr>
+<tr>
+<td>return_type_idx</td>
+<td>uint</td>
+<td>此原型的返回类型的type_ids列表中的索引。</td>
+</tr>
+<tr>
+<td>parameters_off</td>
+<td>uint</td>
+<td>从文件开头到此原型的参数类型列表的偏移量；如果此原型没有参数，则该值为0。该偏移量（如果为非零值）应该位于 data 区段中，且其中的数据应采用下文中“”type_list””指定的格式。此外，不得对列表中的类型void进行任何引用。</td>
+</tr>
+</tbody>
+</table>
+<p>分析得四个方法原型为：</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>shorty</th>
+<th>return_type</th>
+<th>parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>I</td>
+<td>I</td>
+<td>无</td>
+</tr>
+<tr>
+<td>1</td>
+<td>V</td>
+<td>V</td>
+<td>无</td>
+</tr>
+<tr>
+<td>2</td>
+<td>VL</td>
+<td>V</td>
+<td>参数在0x01b0处的是<code>0100 0000 0400</code>，即第4个type：<code>Ljava/lang/String</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>VL</td>
+<td>V</td>
+<td>[Ljava/lang/String</td>
+</tr>
+</tbody>
+</table>
+<p>后面引用到这个原型列表的时候暂且把列表记做protos。</p>
+<h2 id="field-ids"><a href="#field-ids" class="headerlink" title="field_ids"></a>field_ids</h2><p>之前分析到有2个field，偏移为<code>0x0104</code>，<code>field_id_item</code>格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>class_idx</td>
+<td>ushort</td>
+<td>此字段所属的类的type_ids列表中的索引。此项必须是“类”类型，而不能是“数组”或“基元”类型。</td>
+</tr>
+<tr>
+<td>type_idx</td>
+<td>ushort</td>
+<td>此字段的类型的 type_ids 列表中的索引。</td>
+</tr>
+<tr>
+<td>name_idx</td>
+<td>uint</td>
+<td>此字段的名称的 string_ids 列表中的索引。该字符串必须符合上文定义的 MemberName 的语法。</td>
+</tr>
+</tbody>
+</table>
+<p>找到这俩field占的字节如下：<code>0100 0000 0d00 0000</code>，<code>0500 0200 0f00 0000</code>。</p>
+<p>即：</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>class</th>
+<th>type</th>
+<th>name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>LMain</td>
+<td>I</td>
+<td>m</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Ljava/lang/System</td>
+<td>Ljava/io/PrintStream</td>
+<td>out</td>
+</tr>
+</tbody>
+</table>
+<h2 id="method-ids"><a href="#method-ids" class="headerlink" title="method_ids"></a>method_ids</h2><p>由之前分析知5个<code>method_id_item</code>，偏移为<code>0x0114</code>，其格式如下：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>class_idx</td>
+<td>ushort</td>
+<td>此方法的定义符的type_ids列表中的索引。此项必须是“类”或“数组”类型，而不能是“基元”类型。</td>
+</tr>
+<tr>
+<td>proto_idx</td>
+<td>ushort</td>
+<td>此方法的原型的 proto_ids 列表中的索引。</td>
+</tr>
+<tr>
+<td>name_idx</td>
+<td>uint</td>
+<td>此方法名称的 string_ids 列表中的索引。该字符串必须符合上文定义的 MemberName 的语法。</td>
+</tr>
+</tbody>
+</table>
+<p>找到这些字节码：</p>
+<p><img src="/images/method_ids.png" alt></p>
+<p>即可分析出这五个method：</p>
+<table>
+<thead>
+<tr>
+<th>索引</th>
+<th>class</th>
+<th>proto</th>
+<th>name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>I</td>
+<td>protos[1]</td>
+<td><code>&lt;init&gt;</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>I</td>
+<td>protos[0]</td>
+<td>inc</td>
+</tr>
+<tr>
+<td>2</td>
+<td>I</td>
+<td>protos[3]</td>
+<td>main</td>
+</tr>
+<tr>
+<td>3</td>
+<td>LMain</td>
+<td>protos[2]</td>
+<td>println</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Ljava/io/PrintStream</td>
+<td>protos[1]</td>
+<td><code>&lt;init&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="class-defs"><a href="#class-defs" class="headerlink" title="class_defs"></a>class_defs</h2><p>// todo 未完待续。。。</p>
+<hr>
+<p>参考：</p>
+<ul>
+<li><a href="https://source.android.com/devices/tech/dalvik/dex-format#file-layout" target="_blank" rel="noopener">官方文档：dex文件结构</a></li>
+<li><a href="https://gss1.bdstatic.com/9vo3dSag_xI4khGkpoWK1HF6hhy/baike/c0%3Dbaike150%2C5%2C5%2C150%2C50/sign=c05506e79482d158af8f51e3e16372bd/c2fdfc039245d688c56332adacc27d1ed21b2451.jpg" target="_blank" rel="noopener">百度百科：ASCII表</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dalvik/" rel="tag"># dalvik</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/15/LayoutInflater源码分析/" rel="next" title="LayoutInflater源码分析">
+                <i class="fa fa-chevron-left"></i> LayoutInflater源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/15/Deep Learning With Keras/" rel="prev" title="Deep Learning With Keras">
+                Deep Learning With Keras <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/avatar_bboylin.jpeg" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大体结构"><span class="nav-number">2.</span> <span class="nav-text">大体结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#头部"><span class="nav-number">3.</span> <span class="nav-text">头部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#string-ids"><span class="nav-number">4.</span> <span class="nav-text">string_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#type-ids"><span class="nav-number">5.</span> <span class="nav-text">type_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proto-ids"><span class="nav-number">6.</span> <span class="nav-text">proto_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#field-ids"><span class="nav-number">7.</span> <span class="nav-text">field_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#method-ids"><span class="nav-number">8.</span> <span class="nav-text">method_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#class-defs"><span class="nav-number">9.</span> <span class="nav-text">class_defs</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/03/15/dex文件结构/';
+          this.page.identifier = '2019/03/15/dex文件结构/';
+          this.page.title = 'dex文件结构';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
