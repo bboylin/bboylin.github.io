@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Java,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="前言 虽然客户端开发接触Java并发没有server那么多，但是基本的同步类以及实现原理还是要有所了解。不然遇到最基础的ConcurrentModificationException都可能不知道怎么处理。这些是最近总结的一些同步知识。涉及AQS，Semaphore，Condition什么的因为客户端很少用得到也就省略了。">
+<meta name="keywords" content="Java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java同步小结">
+<meta property="og:url" content="https://bboylin.github.io/2019/03/19/Java同步小结/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="前言 虽然客户端开发接触Java并发没有server那么多，但是基本的同步类以及实现原理还是要有所了解。不然遇到最基础的ConcurrentModificationException都可能不知道怎么处理。这些是最近总结的一些同步知识。涉及AQS，Semaphore，Condition什么的因为客户端很少用得到也就省略了。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-03-31T15:48:49.618Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java同步小结">
+<meta name="twitter:description" content="前言 虽然客户端开发接触Java并发没有server那么多，但是基本的同步类以及实现原理还是要有所了解。不然遇到最基础的ConcurrentModificationException都可能不知道怎么处理。这些是最近总结的一些同步知识。涉及AQS，Semaphore，Condition什么的因为客户端很少用得到也就省略了。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/03/19/Java同步小结/">
+
+
+
+
+
+  <title>Java同步小结 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/03/19/Java同步小结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar_bboylin.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Java同步小结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-19T23:46:28+08:00">
+                2019-03-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/03/19/Java同步小结/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/03/19/Java同步小结/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>前言</p>
+<p>虽然客户端开发接触Java并发没有server那么多，但是基本的同步类以及实现原理还是要有所了解。不然遇到最基础的ConcurrentModificationException都可能不知道怎么处理。这些是最近总结的一些同步知识。涉及AQS，Semaphore，Condition什么的因为客户端很少用得到也就省略了。</p>
+<a id="more"></a>
+<h3 id="synchronized关键字"><a href="#synchronized关键字" class="headerlink" title="synchronized关键字"></a>synchronized关键字</h3><p>我们都知道synchronized关键字对同一个线程具备可重入性，可以修饰block和method，并且都可以作用在类和对象上，但是修饰block和method的时候具体区别在哪儿呢？以下面一段代码为例我们来看下其字节码就知道了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="keyword">synchronized</span> (list) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">                list.add(i);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (Test.class) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">                list.add(i);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.print(<span class="string">"this is a synchronized method"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过命令行：<code>javac Test.java</code>然后<code>javap -verbose Test</code>可以看到其对应的字节码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line">// 省略了很多不重要的信息，加了一点点注释</span><br><span class="line">  public static void main(java.lang.String[]);</span><br><span class="line">    descriptor: ([Ljava/lang/String;)V</span><br><span class="line">    flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=2, locals=6, args_size=1</span><br><span class="line">        // new ArrayList并将引用push到操作数栈</span><br><span class="line">         0: new           #2                  // class java/util/ArrayList</span><br><span class="line">         3: dup                               // 将list引用复制一份push到操作数栈</span><br><span class="line">         // 调用实例构造函数，pop list</span><br><span class="line">         4: invokespecial #3                  // Method java/util/ArrayList.&quot;&lt;init&gt;&quot;:()V</span><br><span class="line">         7: astore_1                          // 将list存入局部变量表index =1 位置，同时pop</span><br><span class="line">         8: aload_1                           // 将list取出，push到操作数栈</span><br><span class="line">         9: dup                               // 将list引用复制一份push到操作数栈</span><br><span class="line">        10: astore_2                          // 将list副本存入局部变量表index =2 位置，同时pop</span><br><span class="line">        11: monitorenter</span><br><span class="line">        12: iconst_0</span><br><span class="line">        13: istore_3</span><br><span class="line">        14: iload_3</span><br><span class="line">        15: iconst_5</span><br><span class="line">        16: if_icmpge     36</span><br><span class="line">        19: aload_1</span><br><span class="line">        20: iload_3</span><br><span class="line">        21: invokestatic  #4                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;</span><br><span class="line">        24: invokeinterface #5,  2            // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z</span><br><span class="line">        29: pop</span><br><span class="line">        30: iinc          3, 1</span><br><span class="line">        33: goto          14</span><br><span class="line">        36: aload_2</span><br><span class="line">        37: monitorexit</span><br><span class="line">        38: goto          48</span><br><span class="line">        41: astore        4</span><br><span class="line">        43: aload_2</span><br><span class="line">        44: monitorexit</span><br><span class="line">        45: aload         4</span><br><span class="line">        47: athrow</span><br><span class="line">        48: ldc           #6                  // class Test</span><br><span class="line">        50: dup</span><br><span class="line">        51: astore_2</span><br><span class="line">        52: monitorenter</span><br><span class="line">        53: iconst_0</span><br><span class="line">        54: istore_3</span><br><span class="line">        55: iload_3</span><br><span class="line">        56: iconst_5</span><br><span class="line">        57: if_icmpge     77</span><br><span class="line">        60: aload_1</span><br><span class="line">        61: iload_3</span><br><span class="line">        62: invokestatic  #4                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;</span><br><span class="line">        65: invokeinterface #5,  2            // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z</span><br><span class="line">        70: pop</span><br><span class="line">        71: iinc          3, 1</span><br><span class="line">        74: goto          55</span><br><span class="line">        77: aload_2</span><br><span class="line">        78: monitorexit</span><br><span class="line">        79: goto          89</span><br><span class="line">        82: astore        5</span><br><span class="line">        84: aload_2</span><br><span class="line">        85: monitorexit</span><br><span class="line">        86: aload         5</span><br><span class="line">        88: athrow</span><br><span class="line">        89: return</span><br><span class="line">      Exception table:</span><br><span class="line">         from    to  target type</span><br><span class="line">            12    38    41   any</span><br><span class="line">            41    45    41   any</span><br><span class="line">            53    79    82   any</span><br><span class="line">            82    86    82   any</span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line 6: 0</span><br><span class="line">        line 7: 8</span><br><span class="line">        line 8: 12</span><br><span class="line">        line 9: 19</span><br><span class="line">        line 8: 30</span><br><span class="line">        line 11: 36</span><br><span class="line">        line 12: 48</span><br><span class="line">        line 13: 53</span><br><span class="line">        line 14: 60</span><br><span class="line">        line 13: 71</span><br><span class="line">        line 16: 77</span><br><span class="line">        line 17: 89</span><br><span class="line">  public static synchronized void test();</span><br><span class="line">    descriptor: ()V</span><br><span class="line">    flags: ACC_PUBLIC, ACC_STATIC, ACC_SYNCHRONIZED</span><br><span class="line">    Code:</span><br><span class="line">      stack=2, locals=0, args_size=0</span><br><span class="line">         0: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">         3: ldc           #8                  // String this is a synchronized method</span><br><span class="line">         5: invokevirtual #9                  // Method java/io/PrintStream.print:(Ljava/lang/String;)V</span><br><span class="line">         8: return</span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line 20: 0</span><br><span class="line">        line 21: 8</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看出 synchronized 修饰代码块的时候会在执行到代码块的前将操作数栈的引用指向锁对象，对于对象锁就是该对象，对于类锁就是这个类名的常量（类锁和对象锁之间不会发生竞争），然后插入一个monitorenter指令；当执行完block的时候会多出2个monitorexit指令，一个是正常执行的路径，另一个是block发生异常的路径，保证无论是否有异常都会执行monitorexit。monitorenter会尝试获得锁，将锁计数加1，monitorexit将释放锁，锁计数减1，锁计数为0则释放锁。</p>
+<p>另一方面，synchronized修饰方法时只是给方法的flags加了个ACC_SYNCHRONIZED标志位，由JVM根据这个标志位进行加锁。</p>
+<h3 id="atomic"><a href="#atomic" class="headerlink" title="atomic"></a>atomic</h3><p>Java.util.concurrent.atomic包提供了一些原子类，使用这些原子类操作数据可以保证原子性。以AtomicInteger为例，<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicInteger</span> <span class="keyword">extends</span> <span class="title">Number</span> <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">6214790243416807050L</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// setup to use Unsafe.compareAndSwapInt for updates</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Unsafe unsafe = Unsafe.getUnsafe();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> valueOffset;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            valueOffset = unsafe.objectFieldOffset</span><br><span class="line">                (AtomicInteger.class.getDeclaredField(<span class="string">"value"</span>));</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception ex) &#123; <span class="keyword">throw</span> <span class="keyword">new</span> Error(ex); &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> value;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Creates a new AtomicInteger with the given initial value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> initialValue the initial value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">AtomicInteger</span><span class="params">(<span class="keyword">int</span> initialValue)</span> </span>&#123;</span><br><span class="line">        value = initialValue;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Creates a new AtomicInteger with initial value &#123;<span class="doctag">@code</span> 0&#125;.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">AtomicInteger</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    .......</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically sets to the given value and returns the old value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> newValue the new value</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the previous value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndSet</span><span class="params">(<span class="keyword">int</span> newValue)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndSetInt(<span class="keyword">this</span>, valueOffset, newValue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically increments by one the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the previous value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndIncrement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically decrements by one the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the previous value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndDecrement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, -<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically adds the given value to the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> delta the value to add</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the previous value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndAdd</span><span class="params">(<span class="keyword">int</span> delta)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, delta);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically increments by one the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the updated value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">incrementAndGet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, <span class="number">1</span>) + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically decrements by one the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the updated value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">decrementAndGet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, -<span class="number">1</span>) - <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically adds the given value to the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> delta the value to add</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the updated value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">addAndGet</span><span class="params">(<span class="keyword">int</span> delta)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, delta) + delta;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>其内部是通过Unsafe类提供的一些native方法实现同步操作。类似的还有AtomicReference<v>，AtomicBoolean等。Unsafe是位于sun.misc包下的一个类，主要提供一些用于执行低级别、不安全操作的方法，如直接访问系统内存资源、自主管理内存资源等，这些方法在提升Java运行效率、增强Java语言底层资源操作能力方面起到了很大的作用。但由于Unsafe类使Java语言拥有了类似C语言指针一样操作内存空间的能力，这无疑也增加了程序发生相关指针问题的风险。做客户端可能几乎用不到，但是了解下总归没坏处。</v></p>
+<p>Unsafe类提供类获取Unsafe单例的方法，但是因为限制了调用getUnsafe的类只能是使用BootstrapClassloader加载的类(BootstrapClassloader用于加载JDK核心类库)，所以我们无法直接getUnsafe调用。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Unsafe</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 单例对象</span></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Unsafe theUnsafe;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="title">Unsafe</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="meta">@CallerSensitive</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Unsafe <span class="title">getUnsafe</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Class var0 = Reflection.getCallerClass();</span><br><span class="line">    <span class="comment">// 仅在引导类加载器`BootstrapClassLoader`加载时才合法</span></span><br><span class="line">    <span class="keyword">if</span>(!VM.isSystemDomainLoader(var0.getClassLoader())) &#123;    </span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> SecurityException(<span class="string">"Unsafe"</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> theUnsafe;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>但是我们可以通过反射获取：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Unsafe <span class="title">reflectGetUnsafe</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      Field field = Unsafe.class.getDeclaredField(<span class="string">"theUnsafe"</span>);</span><br><span class="line">      field.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">      <span class="keyword">return</span> (Unsafe) field.get(<span class="keyword">null</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">      log.error(e.getMessage(), e);</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ReentrantLock"><a href="#ReentrantLock" class="headerlink" title="ReentrantLock"></a>ReentrantLock</h3><p>ReentrantLock和synchronized一样具备可重入性，但是区别在于：</p>
+<ul>
+<li>ReentrantLock支持构造函数传入boolean值选择公平锁（FIFO）还是非公平锁（锁被释放的时候如果正好有线程请求锁则直接允许，否则才唤醒等待队头的线程），默认false非公平锁。因为线程上下文切换开销不小，所以非公平锁性能要优于公平锁。</li>
+<li>ReentrantLock是可中断的，使用lockInterruptibly可以对中断做出响应，在获得锁之前停止休眠。还有一个tryLock作用类似，如果超时或者被中断可以在没获得锁的情况下停止休眠</li>
+</ul>
+<h3 id="CountDownLatch"><a href="#CountDownLatch" class="headerlink" title="CountDownLatch"></a>CountDownLatch</h3><p>CountDownLatch是能让一个或者多个线程在一系列操作完成之前一直等待的工具，初始化会设置一个计数，为1时相当于一个简单的开关，为N时只有当N个线程都执行完并调用countDown()后才会接着执行当前线程await后面的代码（每次调用countDown()计数器会减1）。计数器不能重置，如果需要重置可以考虑用CyclicBarrier(没用过)。CountDownLatch是通过AQS实现的。AQS内部通过一个dequeue和flag来维护等待队列。</p>
+<h3 id="再谈ConcurrentModificationException和CopyOnWriteArrayList"><a href="#再谈ConcurrentModificationException和CopyOnWriteArrayList" class="headerlink" title="再谈ConcurrentModificationException和CopyOnWriteArrayList"></a>再谈ConcurrentModificationException和CopyOnWriteArrayList</h3><p>我们都知道在forEach循环的时候不能直接对集合元素进行增删，否则会抛出ConcurrentModificationException。但是原因是为何呢？其实forEach这个语法糖本质上还是用的iterator，以下面一段简单的代码为例：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">    list.add(i);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i : list) &#123;</span><br><span class="line">    System.out.println(i);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们将这段代码通过javac compile成class后再利用其他decompiler给decompile回Java就可以看到等同于：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">java.util.ArrayList localArrayList = <span class="keyword">new</span> java.util.ArrayList();</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">    localArrayList.add(Integer.valueOf(i));</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> (Iterator localIterator = localArrayList.iterator(); localIterator.hasNext();) &#123;</span><br><span class="line">    <span class="keyword">int</span> j = ((Integer)localIterator.next()).intValue();</span><br><span class="line">    System.out.println(j);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这验证了我们说的forEach实际上就是iterator实现的。那么为什么forEach里不能增删这个arrayList里的元素呢？ArrayList中iterator的next方法实现如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">next</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    checkForComodification();</span><br><span class="line">    <span class="keyword">int</span> i = cursor;</span><br><span class="line">    <span class="keyword">if</span> (i &gt;= size)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</span><br><span class="line">    Object[] elementData = ArrayList.<span class="keyword">this</span>.elementData;</span><br><span class="line">    <span class="keyword">if</span> (i &gt;= elementData.length)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ConcurrentModificationException();</span><br><span class="line">    cursor = i + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> (E) elementData[lastRet = i];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">checkForComodification</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (modCount != expectedModCount)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ConcurrentModificationException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>expectedModCount是iterator中的变量，在iterator创建的时候赋值为modCount。每一次iterator的操作都会同步一次expectedModCount = modCount；但是由于我们直接通过ArrayList去add或者remove，就导致modCount变化了，而没有同步给expectedModCount，在下一次iterator的next方法时候判断二者不等，就抛出异常ConcurrentModificationException。那么如何规避呢？方法很多，例如：</p>
+<ul>
+<li>最容易想到的自然是将forEach换成iterator了</li>
+<li>其次把forEach换成for循环也可以规避</li>
+<li>直接将ArrayList换成CopyOnWriteArrayList也能解决</li>
+<li>通过将集合中的元素拷贝一份，利用拷贝得到的元素进行forEach而不是原集合进行forEach。</li>
+</ul>
+<p>这里详细说下第四种吧，这其实也是CopyOnWriteArrayList的原理。在Android源码中也有类似场景，activity生命周期回调执行的时候都会dispatch给Application里的LifecycleCallbacks，我们来看一下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CallSuper</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onStart</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (DEBUG_LIFECYCLE) Slog.v(TAG, <span class="string">"onStart "</span> + <span class="keyword">this</span>);</span><br><span class="line">    mCalled = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    mFragments.doLoaderStart();</span><br><span class="line"></span><br><span class="line">    getApplication().dispatchActivityStarted(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (mAutoFillResetNeeded) &#123;</span><br><span class="line">        getAutofillManager().onVisibleForAutofill();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>举例，Activity onStart的时候调了Application的dispatchActivityStarted<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* package */</span> <span class="function"><span class="keyword">void</span> <span class="title">dispatchActivityStarted</span><span class="params">(Activity activity)</span> </span>&#123;</span><br><span class="line">    Object[] callbacks = collectActivityLifecycleCallbacks();</span><br><span class="line">    <span class="keyword">if</span> (callbacks != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;callbacks.length; i++) &#123;</span><br><span class="line">            ((ActivityLifecycleCallbacks)callbacks[i]).onActivityStarted(activity);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Object[] collectActivityLifecycleCallbacks() &#123;</span><br><span class="line">    Object[] callbacks = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">synchronized</span> (mActivityLifecycleCallbacks) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mActivityLifecycleCallbacks.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            callbacks = mActivityLifecycleCallbacks.toArray();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> callbacks;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这里是先将集合转成数组（这里对集合进行了加锁，确保多线程下的数组和集合一致），利用数组去iterate，同时如果有对集合元素的增删也将作用在集合上，这样就能确保不会出现ConcurrentModificationException（虽然这里源码并不是用的forEach，所以肯定不会出现ConcurrentModificationException，但是即使换成forEach一样不会出现ConcurrentModificationException）</p>
+<p>我们再来看下CopyOnWriteArrayList里是怎么实现的吧。首先同ArrayList一样，CopyOnWriteArrayList也是靠Object数组array存储元素的，不同的是加了volatile修饰，volatile保证里多线程下的可见性，即线程A对array进行写操作后，其他读array的线程也将立即更新各自的array缓存，保证读到的是最新的array值。<br>其次CopyOnWriteArrayList的iterator保存了一份array副本，使用副本遍历，所以无需校验modCount，同理也不支持set,remove,add操作。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">COWIterator</span>&lt;<span class="title">E</span>&gt; <span class="keyword">implements</span> <span class="title">ListIterator</span>&lt;<span class="title">E</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">/** Snapshot of the array */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Object[] snapshot;</span><br><span class="line">    <span class="comment">/** Index of element to be returned by subsequent call to next.  */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> cursor;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">COWIterator</span><span class="params">(Object[] elements, <span class="keyword">int</span> initialCursor)</span> </span>&#123;</span><br><span class="line">        cursor = initialCursor;</span><br><span class="line">        snapshot = elements;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> cursor &lt; snapshot.length;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasPrevious</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> cursor &gt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> E <span class="title">next</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (! hasNext())</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</span><br><span class="line">        <span class="keyword">return</span> (E) snapshot[cursor++];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> E <span class="title">previous</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (! hasPrevious())</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</span><br><span class="line">        <span class="keyword">return</span> (E) snapshot[--cursor];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">nextIndex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> cursor;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">previousIndex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> cursor-<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Not supported. Always throws UnsupportedOperationException.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> UnsupportedOperationException always; &#123;<span class="doctag">@code</span> remove&#125;</span></span><br><span class="line"><span class="comment">     *         is not supported by this iterator.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">set</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ........</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>既然CopyOnWriteArrayList不支持iterator的add，那我们直接看一下CopyOnWriteArrayList自身的add：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Appends the specified element to the end of this list.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> e element to be appended to this list</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> &#123;<span class="doctag">@code</span> true&#125; (as specified by &#123;<span class="doctag">@link</span> Collection#add&#125;)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">add</span><span class="params">(E e)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">this</span>.lock;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Object[] elements = getArray();</span><br><span class="line">        <span class="keyword">int</span> len = elements.length;</span><br><span class="line">        Object[] newElements = Arrays.copyOf(elements, len + <span class="number">1</span>);</span><br><span class="line">        newElements[len] = e;</span><br><span class="line">        setArray(newElements);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>可知add之前使用了ReentrantLock加锁，以保证多线程下不会出现并发问题。</p>
+<h3 id="ConcurrentHashMap"><a href="#ConcurrentHashMap" class="headerlink" title="ConcurrentHashMap"></a>ConcurrentHashMap</h3><p>ConcurrentHashMap在Java8中是通过CAS和红黑树实现的，其在大小小于等于8的时候使用链表存储。put的时候如果目标key的value是null，就使用CAS操作赋值，不为null就对该元素使用synchronized关键字申请锁，然后进行操作。如果该put操作使得当前链表长度超过8，则将该链表转换为树，从而提高寻址效率。put不允许传入的key或者value为null。对于get，由于数组使用volatile修饰，不需要担心可见性问题。Hash算法：取hashCode，与右移16位后的结果异或，保证最高位是0以确保正数。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">spread</span><span class="params">(<span class="keyword">int</span> h)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (h ^ (h &gt;&gt;&gt; <span class="number">16</span>)) &amp; HASH_BITS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/17/Pigeon/" rel="next" title="Pigeon——支持组件化开发和增量编译的路由框架">
+                <i class="fa fa-chevron-left"></i> Pigeon——支持组件化开发和增量编译的路由框架
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/avatar_bboylin.jpeg" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#synchronized关键字"><span class="nav-number">1.</span> <span class="nav-text">synchronized关键字</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#atomic"><span class="nav-number">2.</span> <span class="nav-text">atomic</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ReentrantLock"><span class="nav-number">3.</span> <span class="nav-text">ReentrantLock</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CountDownLatch"><span class="nav-number">4.</span> <span class="nav-text">CountDownLatch</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#再谈ConcurrentModificationException和CopyOnWriteArrayList"><span class="nav-number">5.</span> <span class="nav-text">再谈ConcurrentModificationException和CopyOnWriteArrayList</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ConcurrentHashMap"><span class="nav-number">6.</span> <span class="nav-text">ConcurrentHashMap</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/03/19/Java同步小结/';
+          this.page.identifier = '2019/03/19/Java同步小结/';
+          this.page.title = 'Java同步小结';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
