@@ -94,22 +94,22 @@
 
 
 
-<meta name="description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta name="description" content="前言 本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
 <meta name="keywords" content="Android">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Activity页面展示过程">
 <meta property="og:url" content="https://bboylin.github.io/2019/03/15/Activity页面显示流程/index.html">
 <meta property="og:site_name" content="24号程序猿">
-<meta property="og:description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta property="og:description" content="前言 本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://bboylin.github.io/images/setContentView.png">
 <meta property="og:image" content="https://bboylin.github.io/images/viewTree.png">
 <meta property="og:image" content="https://bboylin.github.io/images/action_mode.png">
 <meta property="og:image" content="https://bboylin.github.io/images/wmg-addView.png">
-<meta property="og:updated_time" content="2018-12-25T14:13:28.000Z">
+<meta property="og:updated_time" content="2019-04-10T16:30:40.966Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Activity页面展示过程">
-<meta name="twitter:description" content="前言本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
+<meta name="twitter:description" content="前言 本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。">
 <meta name="twitter:image" content="https://bboylin.github.io/images/setContentView.png">
 
 
@@ -377,7 +377,8 @@
       
 
       
-        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。<a id="more"></a></p>
+        <p>前言</p>
+<p>本文结合源码分析activity页面展示的大致过程。系作者原创，转载注明出处。<a id="more"></a></p>
 <h3 id="从SetContentView说起"><a href="#从SetContentView说起" class="headerlink" title="从SetContentView说起"></a>从SetContentView说起</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Set the activity content from a layout resource.  The resource will be</span></span><br><span class="line"><span class="comment"> * inflated, adding all top-level views to the activity.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> layoutResID Resource ID to be inflated.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #setContentView(android.view.View)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #setContentView(android.view.View, android.view.ViewGroup.LayoutParams)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setContentView</span><span class="params">(@LayoutRes <span class="keyword">int</span> layoutResID)</span> </span>&#123;</span><br><span class="line">    getWindow().setContentView(layoutResID);</span><br><span class="line">    <span class="comment">// Creates a new ActionBar, locates the inflated ActionBarView, </span></span><br><span class="line">    <span class="comment">// initializes the ActionBar with the view, and sets mActionBar.</span></span><br><span class="line">    initWindowDecorActionBar();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>主要是调用了<code>PhoneWindow</code>的setContentView和初始化了ActionBar。再来看<code>PhoneWindow</code>的setContentView:</p>
 <p><img src="/images/setContentView.png" alt></p>
@@ -433,8 +434,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/03/15/JVM概述/" rel="next" title="JVM概述">
-                <i class="fa fa-chevron-left"></i> JVM概述
+              <a href="/2019/03/15/Deep Learning With Keras/" rel="next" title="Deep Learning With Keras">
+                <i class="fa fa-chevron-left"></i> Deep Learning With Keras
               </a>
             
           </div>
@@ -443,8 +444,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/03/15/Choreographer/" rel="prev" title="Choreographer源码分析">
-                Choreographer源码分析 <i class="fa fa-chevron-right"></i>
+              <a href="/2019/03/15/overridePendingTransition居然失效了？/" rel="prev" title="overridePendingTransition居然失效了？">
+                overridePendingTransition居然失效了？ <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -527,7 +528,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-count">12</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -538,7 +539,7 @@
             
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -549,7 +550,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -644,7 +645,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#从SetContentView说起"><span class="nav-number">2.</span> <span class="nav-text">从SetContentView说起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DecorView如何展示在用户面前"><span class="nav-number">3.</span> <span class="nav-text">DecorView如何展示在用户面前</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#从SetContentView说起"><span class="nav-number">1.</span> <span class="nav-text">从SetContentView说起</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DecorView如何展示在用户面前"><span class="nav-number">2.</span> <span class="nav-text">DecorView如何展示在用户面前</span></a></li></ol></div>
             
 
           </div>
