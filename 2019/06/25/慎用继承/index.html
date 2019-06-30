@@ -102,7 +102,7 @@
 <meta property="og:site_name" content="24号程序猿">
 <meta property="og:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-06-26T15:08:11.338Z">
+<meta property="og:updated_time" content="2019-06-29T13:59:18.918Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="慎用继承">
 <meta name="twitter:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
@@ -381,6 +381,8 @@
 <li><strong><em>父类的constructor不能调用可被覆写的方法</em></strong> 原因很简单，父类constructor先于子类constructor执行，一旦调用可覆写的方法，子类中的变量实例很可能还没初始化，造成程序异常。同理 <strong><em>clone和readObject都不能调用可被覆写的方法</em></strong> 因为覆写的方法调用时间在反序列化和clone完成之前。</li>
 <li>尽量用接口代替抽象类。</li>
 </ul>
+<hr>
+<p>总结来说就是，因为Java语言默认类可继承，一定程度上会加剧在工程中随意继承的现象，而随意继承会不经意间给后面维护埋下坑。并不说不要继承，而是一旦继承就好好设计并写好注释或者文档。</p>
 
       
     </div>
@@ -420,6 +422,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/29/2019年5月泰国行/" rel="prev" title="2019/05泰国行">
+                2019/05泰国行 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -501,7 +507,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-count">13</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -512,7 +518,7 @@
             
             <div class="site-state-item site-state-categories">
               
-                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-count">8</span>
                 <span class="site-state-item-name">分类</span>
               
             </div>
@@ -523,7 +529,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-count">8</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
