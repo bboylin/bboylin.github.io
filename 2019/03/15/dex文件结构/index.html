@@ -1,499 +1,388 @@
 <!DOCTYPE html>
-<html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
 <head><meta name="generator" content="Hexo 3.8.0">
-  <meta charset="utf-8">
-  <title>dex文件结构 | 24号程序猿</title>
-  <meta name="keywords" content=" dalvik ">
-  <meta name="description" content="dex文件结构 | 24号程序猿">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta property="og:type" content="website">
-<meta property="og:title" content="分类">
-<meta property="og:url" content="https://bboylin.github.io/categories/index.html">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="dalvik,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
+<meta name="keywords" content="dalvik">
+<meta property="og:type" content="article">
+<meta property="og:title" content="dex文件结构">
+<meta property="og:url" content="https://bboylin.github.io/2019/03/15/dex文件结构/index.html">
 <meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-03-13T11:05:36.000Z">
+<meta property="og:image" content="https://bboylin.github.io/images/dx.png">
+<meta property="og:image" content="https://bboylin.github.io/images/adb&dexdump.png">
+<meta property="og:image" content="https://bboylin.github.io/images/dexdump_options.png">
+<meta property="og:image" content="https://bboylin.github.io/images/magic.png">
+<meta property="og:image" content="https://bboylin.github.io/images/magic_ver.png">
+<meta property="og:image" content="https://bboylin.github.io/images/map_off.png">
+<meta property="og:image" content="https://bboylin.github.io/images/string_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/first_string_data_item.png">
+<meta property="og:image" content="https://bboylin.github.io/images/type_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/proto_ids.png">
+<meta property="og:image" content="https://bboylin.github.io/images/method_ids.png">
+<meta property="og:updated_time" content="2018-04-05T10:48:26.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="分类">
+<meta name="twitter:title" content="dex文件结构">
+<meta name="twitter:description" content="本文为作者原创，转载请注明出处。 前言上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。">
+<meta name="twitter:image" content="https://bboylin.github.io/images/dx.png">
 
 
-<link rel="icon" href="/img/avatar.jpg">
 
-<link href="/css/style.css?v=1.0.1" rel="stylesheet">
-
-<link href="/css/hl_theme/atom-light.css?v=1.0.1" rel="stylesheet">
-
-<link href="//cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet">
-<link href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-
-<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
-<script src="/js/jquery.autocomplete.min.js?v=1.0.1"></script>
-
-<script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>
-    hljs.initHighlightingOnLoad();
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
 </script>
 
-<script src="//cdn.bootcss.com/nprogress/0.2.0/nprogress.min.js"></script>
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/03/15/dex文件结构/">
 
 
 
-<script src="//cdn.bootcss.com/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 
-<script src="/js/iconfont.js?v=1.0.1"></script>
+
+  <title>dex文件结构 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </head>
-<div style="display: none">
-  <input class="theme_disqus_on" value="false">
-  <input class="theme_preload_comment" value="false">
-  <input class="theme_blog_path" value>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
 </div>
 
-<body>
-<aside class="nav">
-    <div class="nav-left">
-        <a href="/" class="avatar_target">
-    <img class="avatar" src="/img/avatar.jpg">
-</a>
-<div class="author">
-    <span>bboylin</span>
-</div>
+<nav class="site-nav">
+  
 
-<div class="icon">
-    
+  
+    <ul id="menu" class="menu">
+      
         
-        <a title="rss" href="/atom.xml" target="_blank">
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
             
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-rss"/>
-                </svg>
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
             
-        </a>
+            首页
+          </a>
+        </li>
+      
         
-    
-        
-        <a title="github" href="https://github.com/yelog" target="_blank">
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
             
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-github"/>
-                </svg>
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
             
-        </a>
+            分类
+          </a>
+        </li>
+      
         
-    
-        
-        <a title="facebook" href="https://www.facebook.com/faker.tops" target="_blank">
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
             
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-facebook"/>
-                </svg>
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
             
-        </a>
+            归档
+          </a>
+        </li>
+      
         
-    
-        
-    
-        
-    
-        
-        <a title="instagram" href="https://www.facebook.com/faker.tops" target="_blank">
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
             
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-instagram"/>
-                </svg>
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
             
-        </a>
-        
-    
-        
-        <a title="reddit" href="https://www.reddit.com/user/yelog/" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-reddit"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="weibo" href="http://weibo.com/u/2307534817" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-weibo"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="jianshu" href="https://www.jianshu.com/u/ff56736de7cf" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-jianshu"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="zhihu" href="https://www.zhihu.com/people/jaytp/activities" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-zhihu"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-    
-        
-        <a title="oschina" href="https://my.oschina.net/yelog" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-oschina"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-    
-        
-        <a title="email" href="mailto:jaytp@qq.com" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-email"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="qq" href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-qq"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="kugou" href="https://www.kugou.com/" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-kugou"/>
-                </svg>
-            
-        </a>
-        
-    
-        
-        <a title="neteasemusic" href="https://music.163.com/#/user/home?id=88151013" target="_blank">
-            
-                <svg class="iconfont-svg" aria-hidden="true">
-                    <use xlink:href="#icon-neteasemusic"/>
-                </svg>
-            
-        </a>
-        
-    
-</div>
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
 
 
 
+ </div>
+    </header>
 
-<ul>
-    <li><div class="all active">全部文章<small>(14)</small></div></li>
-    
-        
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
             
-            <li><div data-rel="bug">bug<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="深度学习">深度学习<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="dalvik">dalvik<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="Android">Android<small>(6)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="jvm">jvm<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="Java">Java<small>(2)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="Reactive Programming">Reactive Programming<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-        
-            
-            <li><div data-rel="traveling">traveling<small>(1)</small></div>
-                
-            </li>
-            
-        
-    
-</ul>
-<div class="left-bottom">
-    <div class="menus">
-    
-    
-    
-    
-    </div>
-    <div><a style="border-right: 1px solid #fff; width: 49%" class="about site_url" href="/about">关于</a><a style="width: 50%" class="friends">友链</a></div>
-</div>
-<input type="hidden" id="yelog_site_posts_number" value="14">
 
-<div style="display: none">
-    <span id="busuanzi_value_site_uv"></span>
-    <span id="busuanzi_value_site_pv"></span>
-</div>
+  <div id="posts" class="posts-expand">
+    
 
-    </div>
-    <div class="nav-right">
-        <div class="friends-area">
-    <div class="friends-title">
-        友情链接
-        <i class="back-title-list"></i>
-    </div>
-    <div class="friends-content">
-        <ul>
-            
-            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
-            
-        </ul>
-    </div>
-</div>
-        <div class="title-list">
-    <form onkeydown="if(event.keyCode==13){return false;}">
-        <input class="search" type="text" placeholder="Search..." autocomplete="off" id="local-search-input">
-        <i class="cross"></i>
-        <span>
-            <label for="tagswitch">Tags:</label>
-            <input id="tagswitch" type="checkbox" style="display: none">
-            <i id="tagsWitchIcon"></i>
-        </span>
-    </form>
-    <div class="tags-list">
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color4">bug</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color5">深度学习</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color2">dalvik</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color3">Android</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color4">jvm</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color5">Java</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color1">Reactive Programming</a>
-    </li>
-    
-    <li class="article-tag-list-item">
-        <a href="javascript:" class="color5">traveling</a>
-    </li>
-    
-    <div class="clearfix"></div>
-</div>
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/03/15/dex文件结构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
 
     
-    <nav id="title-list-nav">
-        
-        <a class="bug " href="/2019/03/15/overridePendingTransition居然失效了？/" data-tag="bug" data-author>
-            <span class="post-title" title="overridePendingTransition居然失效了？">overridePendingTransition居然失效了？</span>
-            <span class="post-date" title="2019-03-15 21:08:54">2019/03/15</span>
-        </a>
-        
-        <a class="深度学习 " href="/2019/03/15/Deep Learning With Keras/" data-tag="深度学习" data-author>
-            <span class="post-title" title="Deep Learning With Keras">Deep Learning With Keras</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="dalvik " href="/2019/03/15/dex文件结构/" data-tag="dalvik" data-author>
-            <span class="post-title" title="dex文件结构">dex文件结构</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="Android " href="/2019/03/15/LayoutInflater源码分析/" data-tag="Android" data-author>
-            <span class="post-title" title="LayoutInflater源码分析">LayoutInflater源码分析</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="Android " href="/2019/03/15/Choreographer/" data-tag="Android" data-author>
-            <span class="post-title" title="Choreographer源码分析">Choreographer源码分析</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="Android " href="/2019/03/15/Activity页面显示流程/" data-tag="Android" data-author>
-            <span class="post-title" title="Activity页面展示过程">Activity页面展示过程</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="jvm " href="/2019/03/15/JVM概述/" data-tag="jvm" data-author>
-            <span class="post-title" title="JVM概述">JVM概述</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="Android " href="/2019/03/15/InstantRun源码分析/" data-tag="Android" data-author>
-            <span class="post-title" title="InstantRun原理以及源码分析">InstantRun原理以及源码分析</span>
-            <span class="post-date" title="2019-03-15 21:08:52">2019/03/15</span>
-        </a>
-        
-        <a class="Android " href="/2019/03/17/Pigeon/" data-tag="Android" data-author>
-            <span class="post-title" title="Pigeon——支持组件化开发和增量编译的路由框架">Pigeon——支持组件化开发和增量编译的路由框架</span>
-            <span class="post-date" title="2019-03-17 00:07:54">2019/03/17</span>
-        </a>
-        
-        <a class="Java " href="/2019/03/19/Java同步小结/" data-tag="Java" data-author>
-            <span class="post-title" title="Java同步小结">Java同步小结</span>
-            <span class="post-date" title="2019-03-19 23:46:28">2019/03/19</span>
-        </a>
-        
-        <a class="Reactive Programming " href="/2019/04/11/RxJava2源码分析/" data-tag="Reactive Programming" data-author>
-            <span class="post-title" title="RxJava2源码分析">RxJava2源码分析</span>
-            <span class="post-date" title="2019-04-11 00:29:19">2019/04/11</span>
-        </a>
-        
-        <a class="Java " href="/2019/06/25/慎用继承/" data-tag="Java" data-author>
-            <span class="post-title" title="慎用继承">慎用继承</span>
-            <span class="post-date" title="2019-06-25 23:19:32">2019/06/25</span>
-        </a>
-        
-        <a class="traveling " href="/2019/06/29/2019年5月泰国行/" data-tag="traveling" data-author>
-            <span class="post-title" title="2019/05泰国行">2019/05泰国行</span>
-            <span class="post-date" title="2019-06-29 21:55:14">2019/06/29</span>
-        </a>
-        
-        <a class="Android " href="/2019/07/14/leakcanary2源码分析/" data-tag="Android" data-author>
-            <span class="post-title" title="leakcanary2源码分析">leakcanary2源码分析</span>
-            <span class="post-date" title="2019-07-14 00:17:53">2019/07/14</span>
-        </a>
-        
-    </nav>
-</div>
-    </div>
-    <div class="hide-list">
-        <div class="semicircle">
-            <div class="brackets first"><</div>
-            <div class="brackets">&gt;</div>
-        </div>
-    </div>
-</aside>
-<div class="post">
-    <div class="pjax">
-        <article id="post-dex文件结构" class="article article-type-post" itemscope itemprop="blogPost">
-    
-        <h1 class="article-title">dex文件结构</h1>
-    
-    <div class="article-meta">
+      <header class="post-header">
+
         
         
+          <h1 class="post-title" itemprop="name headline">dex文件结构</h1>
         
-        <span class="book">
+
+        <div class="post-meta">
+          <span class="post-time">
             
-                <a href="javascript:" data-rel="dalvik">dalvik</a>
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-15T21:08:52+08:00">
+                2019-03-15
+              </time>
             
-        </span>
-        
-        
-        <span class="tag">
+
             
-            <a href="javascript:" class="color2">dalvik</a>
+
             
-        </span>
-        
-    </div>
-    <div class="article-meta">
-        
-        创建时间:<time class="date" title="更新时间: 2018-04-05 18:48:26">2019-03-15 21:08</time>
-        
-    </div>
-    <div class="article-meta">
-        
-        
-        <span id="busuanzi_container_page_pv">
-            阅读:<span id="busuanzi_value_page_pv">
-                <span class="count-comment">
-                    <span class="spinner">
-                      <div class="cube1"></div>
-                      <div class="cube2"></div>
-                    </span>
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/dalvik/" itemprop="url" rel="index">
+                    <span itemprop="name">dalvik</span>
+                  </a>
                 </span>
+
+                
+                
+              
             </span>
-        </span>
-        
-        
-    </div>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/03/15/dex文件结构/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/03/15/dex文件结构/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
     
-    <div class="toc-ref">
+
     
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#大体结构"><span class="toc-text">大体结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#头部"><span class="toc-text">头部</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#string-ids"><span class="toc-text">string_ids</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#type-ids"><span class="toc-text">type_ids</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#proto-ids"><span class="toc-text">proto_ids</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#field-ids"><span class="toc-text">field_ids</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#method-ids"><span class="toc-text">method_ids</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#class-defs"><span class="toc-text">class_defs</span></a></li></ol>
     
-<style>
-    .left-col .switch-btn,
-    .left-col .switch-area {
-        display: none;
-    }
-    .toc-level-3 i,
-    .toc-level-3 ol {
-        display: none !important;
-    }
-</style>
-</div>
-    <div class="article-entry" itemprop="articleBody">
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
       
         <p>本文为作者原创，转载请注明出处。</p>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上次写了一篇关于JVM的综述，主要讨论了类文件结构和内存管理以及类加载，这次我们来分析下dex文件结构，与java字节码不同，dalvik字节码是小端存储。<a id="more"></a></p>
@@ -1201,249 +1090,311 @@
 </ul>
 
       
-       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
     </div>
-</article>
-
-
-<p>
-    <a href="javascript:void(0)" class="dashang" onclick="dashangToggle()">赏</a>
-</p>
-
-
-<div class="article_copyright">
-    <p><span class="copy-title">文章标题:</span>dex文件结构</p>
     
-    <p><span class="copy-title">本文作者:</span><a href="javascript:void(0)" title="bboylin">bboylin</a></p>
-    <p><span class="copy-title">发布时间:</span>2019-03-15, 21:08:52</p>
-    <p><span class="copy-title">最后更新:</span>2018-04-05, 18:48:26</p>
-    <span class="copy-title">原始链接:</span><a class="post-url" href="/2019/03/15/dex文件结构/" title="dex文件结构">https://bboylin.github.io/2019/03/15/dex文件结构/</a>
-    <p>
-        <span class="copy-title">版权声明:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" title="CC BY-NC-SA 4.0 International" target="_blank">"署名-非商用-相同方式共享 4.0"</a> 转载请保留原文链接及作者。
-    </p>
-</div>
-
-
-
-
+    
+    
 
     
 
+    
 
+    
 
-
-    </div>
-    <div class="copyright">
-        <p class="footer-entry">©2016-2019 Yelog</p>
-<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
-
-    </div>
-    <div class="full-toc">
-        <button class="full"><span class="min "></span></button>
-<button class="post-toc-menu"><span class="post-toc-menu-icons"></span></button>
-<div class="post-toc"><span class="post-toc-title">目录</span>
-    <div class="post-toc-content">
-
-    </div>
-</div>
-<a class id="rocket" href="javascript:void(0)"></a>
-    </div>
-</div>
-<div class="acParent"></div>
-
-<div class="hide_box" onclick="dashangToggle()"></div>
-<div class="shang_box">
-    <a class="shang_close" href="javascript:void(0)" onclick="dashangToggle()">×</a>
-    <div class="shang_tit">
-        <p>喜欢就点赞,疼爱就打赏</p>
-    </div>
-    <div class="shang_payimg">
-        <div class="pay_img">
-            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
-            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/dalvik/" rel="tag"># dalvik</a>
+          
         </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/15/InstantRun源码分析/" rel="next" title="InstantRun原理以及源码分析">
+                <i class="fa fa-chevron-left"></i> InstantRun原理以及源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/15/LayoutInflater源码分析/" rel="prev" title="LayoutInflater源码分析">
+                LayoutInflater源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
     </div>
-    <div class="shang_payselect">
-        <span><label><input type="radio" name="pay" checked value="alipay">支付宝</label></span><span><label><input type="radio" name="pay" value="weixin">微信</label></span>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
     </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#大体结构"><span class="nav-number">2.</span> <span class="nav-text">大体结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#头部"><span class="nav-number">3.</span> <span class="nav-text">头部</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#string-ids"><span class="nav-number">4.</span> <span class="nav-text">string_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#type-ids"><span class="nav-number">5.</span> <span class="nav-text">type_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proto-ids"><span class="nav-number">6.</span> <span class="nav-text">proto_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#field-ids"><span class="nav-number">7.</span> <span class="nav-text">field_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#method-ids"><span class="nav-number">8.</span> <span class="nav-text">method_ids</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#class-defs"><span class="nav-number">9.</span> <span class="nav-text">class_defs</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
 </div>
 
 
-</body>
-<script src="//cdn.bootcss.com/jquery.pjax/2.0.1/jquery.pjax.min.js"></script>
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
 
-<script src="/js/script.js?v=1.0.1"></script>
-<script>
-    var img_resize = 'default';
-    /*作者、标签的自动补全*/
-    $(function () {
-        $('.search').AutoComplete({
-            'data': ['#bug','#深度学习','#dalvik','#Android','#jvm','#Java','#Reactive Programming','#traveling',],
-            'itemHeight': 20,
-            'width': 418
-        }).AutoComplete('show');
-    })
-    function initArticle() {
-        /*渲染对应的表格样式*/
-        
-            $(".post .pjax table").addClass("green_title");
-        
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
 
-        /*渲染打赏样式*/
-        
-        $("input[name=pay]").on("click", function () {
-            if($("input[name=pay]:checked").val()=="weixin"){
-                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
-            } else {
-                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
-            }
-        })
-        
-
-        /*高亮代码块行号*/
-        
-        $('pre code').each(function(){
-            var lines = $(this).text().split('\n').length - 1, widther='';
-            if (lines>99) {
-                widther = 'widther'
-            }
-            var $numbering = $('<ul/>').addClass('pre-numbering ' + widther).attr("unselectable","on");
-            $(this).addClass('has-numbering ' + widther)
-                    .parent()
-                    .append($numbering);
-            for(var i=1;i<=lines;i++){
-                $numbering.append($('<li/>').text(i));
-            }
-        });
-        
-
-        /*访问数量*/
-        
-        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
-        
-
-        /*代码高亮，行号对齐*/
-        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
 
         
-    }
 
-    /*打赏页面隐藏与展示*/
+        
+      </div>
+    </footer>
+
     
-    function dashangToggle() {
-        $(".shang_box").fadeToggle();
-        $(".hide_box").fadeToggle();
-    }
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
     
 
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
 </script>
 
-<!--加入行号的高亮代码块样式-->
-
-<style>
-    pre{
-        position: relative;
-        margin-bottom: 24px;
-        border-radius: 10px;
-        border: 1px solid #e2dede;
-        background: #FFF;
-        overflow: hidden;
-    }
-    code.has-numbering{
-        margin-left: 30px;
-    }
-    code.has-numbering.widther{
-        margin-left: 35px;
-    }
-    .pre-numbering{
-        margin: 0px;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 20px;
-        padding: 0.5em 3px 0.7em 5px;
-        border-right: 1px solid #C3CCD0;
-        text-align: right;
-        color: #AAA;
-        background-color: #fafafa;
-    }
-    .pre-numbering.widther {
-        width: 35px;
-    }
-</style>
-
-<!--自定义样式设置-->
-<style>
-    
-    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
-        color: #383636;
-    }
-    
-    
-    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
-        color: #5e5e5f;
-    }
-    
-    
-    .nav-right nav a.hover, #local-search-result a.hover{
-        background-color: #e2e0e0;
-    }
-    
-    
-
-    /*列表样式*/
-    
-    .post .pjax article .article-entry>ol, .post .pjax article .article-entry>ul, .post .pjax article>ol, .post .pjax article>ul{
-        border: #e2dede solid 1px;
-        border-radius: 10px;
-        padding: 10px 32px 10px 56px;
-    }
-    .post .pjax article .article-entry li>ol, .post .pjax article .article-entry li>ul,.post .pjax article li>ol, .post .pjax article li>ul{
-        padding-top: 5px;
-        padding-bottom: 5px;
-    }
-    .post .pjax article .article-entry>ol>li, .post .pjax article .article-entry>ul>li,.post .pjax article>ol>li, .post .pjax article>ul>li{
-        margin-bottom: auto;
-        margin-left: auto;
-    }
-    .post .pjax article .article-entry li>ol>li, .post .pjax article .article-entry li>ul>li,.post .pjax article li>ol>li, .post .pjax article li>ul>li{
-        margin-bottom: auto;
-        margin-left: auto;
-    }
-    
-
-    /* 背景图样式 */
-    
-    
-
-
-    /*引用块样式*/
-    
-
-    /*文章列表背景图*/
-    
-    .nav-right:before {
-        content: ' ';
-        display: block;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0.3;
-        background: url("https://i.loli.net/2019/07/22/5d3521411f3f169375.png");
-        background-repeat: no-repeat;
-        background-position: 50% 0;
-        -ms-background-size: cover;
-        -o-background-size: cover;
-        -moz-background-size: cover;
-        -webkit-background-size: cover;
-        background-size: cover;
-    }
-    
-
-    
-</style>
 
 
 
@@ -1451,4 +1402,131 @@
 
 
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/03/15/dex文件结构/';
+          this.page.identifier = '2019/03/15/dex文件结构/';
+          this.page.title = 'dex文件结构';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
 </html>
