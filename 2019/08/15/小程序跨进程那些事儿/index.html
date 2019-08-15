@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Android,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="本文系个人原创，禁止任何形式的转载。欢迎评论发表你的看法。 众所周知，小程序在Android上是独立进程的，这样做一方面有利于多个小程序之间运行环境隔离，同时在操作系统层面单个小程序类似一个独立的App；另一方面进程之间可循环复用，支持同时打开多个小程序。但是独立进程后必然会涉及很多跨进程调用和跨进程通信的场景，例如获取账号信息/登陆相关，分享，插件, 读写sp，进程保活等等，某些场景下考虑到页面">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="小程序跨进程那些事儿">
+<meta property="og:url" content="https://bboylin.github.io/2019/08/15/小程序跨进程那些事儿/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="本文系个人原创，禁止任何形式的转载。欢迎评论发表你的看法。 众所周知，小程序在Android上是独立进程的，这样做一方面有利于多个小程序之间运行环境隔离，同时在操作系统层面单个小程序类似一个独立的App；另一方面进程之间可循环复用，支持同时打开多个小程序。但是独立进程后必然会涉及很多跨进程调用和跨进程通信的场景，例如获取账号信息/登陆相关，分享，插件, 读写sp，进程保活等等，某些场景下考虑到页面">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-08-15T13:46:11.004Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="小程序跨进程那些事儿">
+<meta name="twitter:description" content="本文系个人原创，禁止任何形式的转载。欢迎评论发表你的看法。 众所周知，小程序在Android上是独立进程的，这样做一方面有利于多个小程序之间运行环境隔离，同时在操作系统层面单个小程序类似一个独立的App；另一方面进程之间可循环复用，支持同时打开多个小程序。但是独立进程后必然会涉及很多跨进程调用和跨进程通信的场景，例如获取账号信息/登陆相关，分享，插件, 读写sp，进程保活等等，某些场景下考虑到页面">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/08/15/小程序跨进程那些事儿/">
+
+
+
+
+
+  <title>小程序跨进程那些事儿 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/08/15/小程序跨进程那些事儿/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">小程序跨进程那些事儿</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-08-15T21:38:11+08:00">
+                2019-08-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/08/15/小程序跨进程那些事儿/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/08/15/小程序跨进程那些事儿/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文系个人原创，禁止任何形式的转载。欢迎评论发表你的看法。</p>
+<p>众所周知，小程序在Android上是独立进程的，这样做一方面有利于多个小程序之间运行环境隔离，同时在操作系统层面单个小程序类似一个独立的App；另一方面进程之间可循环复用，支持同时打开多个小程序。但是独立进程后必然会涉及很多跨进程调用和跨进程通信的场景，例如获取账号信息/登陆相关，分享，插件, 读写sp，进程保活等等，某些场景下考虑到页面栈问题也必须跨进程调用，那么小程序是如何进行跨进程调用的呢？</p>
+<a id="more"></a>
+<h3 id="跨进程调用"><a href="#跨进程调用" class="headerlink" title="跨进程调用"></a>跨进程调用</h3><h4 id="ContentProvider跨进程调用"><a href="#ContentProvider跨进程调用" class="headerlink" title="ContentProvider跨进程调用"></a>ContentProvider跨进程调用</h4><p>对于同步并且无需context的跨进程调用，通过在主进程预埋一个ContentProvider，指定其authorities，然后为了方便调用，我们提供了一个抽象类Delegation，抽象方法exec供子类重写执行相应逻辑。调用方只需要通过传入一个context和一个用于执行具体逻辑的Delegation子类即可将逻辑放在主进程执行，并同步返回。原理就是利用ContentResolver的call方法来执行ContentProvider的call方法，并传入delegation class name，ContentProvider的call方法利用反射创建delegation实例，调用exec方法，并将结果返回。这种调用方式较为轻量，解决sp跨进程读写问题亦可采用这种方式。</p>
+<h4 id="activity代理"><a href="#activity代理" class="headerlink" title="activity代理"></a>activity代理</h4><p>对于需要context的异步跨进程调用（需不需要Context一方面看调用的业务，另一方面要考虑到页面栈问题，这个后面细讲），通过在主进程预埋一个standard的透明代理activity，用于执行delegation业务逻辑。通过startActivity调起代理activity，代理activity onCreate里从intent取出代理class name和参数，反射创建代理实例执行相应逻辑，当异步过程结束后将结果通过setResult返回给原调用activity的onResult，finish代理activity。</p>
+<h4 id="messenger"><a href="#messenger" class="headerlink" title="messenger"></a>messenger</h4><p>messenger在进程间通信是常用手段，在小程序activity创建之后会bind一个service，service建立和主进程的连接，通过messenger通信，在msg中传入delegation class name和type进行IPC调用。</p>
+<h3 id="DeathRecipient"><a href="#DeathRecipient" class="headerlink" title="DeathRecipient"></a>DeathRecipient</h3><p>跨进程通信过程中需要利用DeathRecipient保证连接的可靠性，通过<code>linkToDeath</code>方法传入一个<code>DeathRecipient</code>，在remote binder因为进程被kill而消失的时候会调用<code>DeathRecipient</code>的<code>binderDied()</code>方法，利用这个我们可以监听到进程被kill。对于小程序进程来讲，主进程被kill会尝试唤醒主进程，重新建立连接。对主进程来说，某个小程序进程被kill后会断开连接，然后预创建小程序进程，重新建立连接。</p>
+<h3 id="跨进程读写sp"><a href="#跨进程读写sp" class="headerlink" title="跨进程读写sp"></a>跨进程读写sp</h3><p>sp读除了首次会从文件同步到内存后面都是基于内存，写分同步异步，apply会先将内容写入内存，再异步写入文件，commit则是同步写入文件。虽然本质是基于文件，但是由于依赖内存去读，所以sp在多进程下会存在问题。目前读取通用配置等sp使用ContentProvider代理到主进程读，从而规避进程间同步问题。关于sp的原理推荐：<a href="http://gityuan.com/2017/06/18/SharedPreferences/" target="_blank" rel="noopener">http://gityuan.com/2017/06/18/SharedPreferences/</a></p>
+<h3 id="插件页面栈"><a href="#插件页面栈" class="headerlink" title="插件页面栈"></a>插件页面栈</h3><p>百度app使用的插件众多，由于百度app插件框架的限制，小程序进程无法直接用自身的context来调起插件页面，在小程序进程中直接调起插件其实最终插件框架使用的是application的context来调起的插件。而且插件大多launchMode是“singleTask”，taskAffinity未明确指定，这就导致小程序中直接调起插件，插件页面会进入百度app页面栈，这里再简单介绍下launchMode和页面栈的关系。</p>
+<p>launchMode分：”standard”, “singleTop”, “singleTask”, “singleInstance”。”standard”和”singleTop”相似，都是可创建多个实例，但不同的是singleTop在页面栈顶已经存在实例的情况下会进行复用，回调onNewIntent。而且这俩不论taskAffinity如何都会进入启动他的activity的页面栈。”singleTask”和”singleInstance”相似，只能有一个实例。”singleTask”相当于是自带<code>FLAG_ACTIVITY_CLEAR_TOP</code>标志，栈内复用时会pop栈顶的activity。这俩差别在于”singleInstance”所在栈内只允许这一个activity存在，使用”singleInstance”的activity去启动另一个activity的话intent就像自动带上了<code>FLAG_ACTIVITY_NEW_TASK</code>标志。页面栈的话singleTask受自身的taskAffinity影响，如果和启动他的activity（不为singleInstance）所属栈 taskAffinity相同，会进入启动它的taskAffinity页面栈中，如果不同，则不在同一页面栈。”singleInstance”则不受taskAffinity影响，独处一栈。</p>
+<p>当然上面讨论的都是activity启动activity的情况，事实上，其他context也能启动activity，例如service，application。但是context（特指非activity context）启动activity的时候必须加上<code>FLAG_ACTIVITY_NEW_TASK</code>标志，否则直接会崩溃，因为被启动activity无法知晓自己应该存在于哪个栈中。具体可见<code>ContextImpl</code>的源码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">startActivity</span><span class="params">(Intent intent, Bundle options)</span> </span>&#123;</span><br><span class="line">    warnIfCallingFromSystemProcess();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Calling start activity from outside an activity without FLAG_ACTIVITY_NEW_TASK is</span></span><br><span class="line">    <span class="comment">// generally not allowed, except if the caller specifies the task id the activity should</span></span><br><span class="line">    <span class="comment">// be launched in. A bug was existed between N and O-MR1 which allowed this to work. We</span></span><br><span class="line">    <span class="comment">// maintain this for backwards compatibility.</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> targetSdkVersion = getApplicationInfo().targetSdkVersion;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((intent.getFlags() &amp; Intent.FLAG_ACTIVITY_NEW_TASK) == <span class="number">0</span></span><br><span class="line">            &amp;&amp; (targetSdkVersion &lt; Build.VERSION_CODES.N</span><br><span class="line">                    || targetSdkVersion &gt;= Build.VERSION_CODES.P)</span><br><span class="line">            &amp;&amp; (options == <span class="keyword">null</span></span><br><span class="line">                    || ActivityOptions.fromBundle(options).getLaunchTaskId() == -<span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> AndroidRuntimeException(</span><br><span class="line">                <span class="string">"Calling startActivity() from outside of an Activity "</span></span><br><span class="line">                        + <span class="string">" context requires the FLAG_ACTIVITY_NEW_TASK flag."</span></span><br><span class="line">                        + <span class="string">" Is this really what you want?"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    mMainThread.getInstrumentation().execStartActivity(</span><br><span class="line">            getOuterContext(), mMainThread.getApplicationThread(), <span class="keyword">null</span>,</span><br><span class="line">            (Activity) <span class="keyword">null</span>, intent, -<span class="number">1</span>, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这种情形下启动activity，activity归属栈和taskAffinity直接相关。也就是什么taskAffinity进什么栈(singleInstance依旧例外)。</p>
+<p>回到之前讨论的小程序进程直接调起插件，由于使用的是application context调起，taskAffinity又没指定，所以插件activity运行在主进程页面栈，导致回退时候直接退回百度app了。因为插件调用来源不止小程序，而且插件多，改插件的taskAffinity虽能解决问题，但是实属下下策。所以多数场景我们采用activity跨进程代理调用插件，这样相当于代理activity运行在主进程，但是在小程序页面栈，同时代理activity调起插件，只要插件activity是standard的，就会归属于小程序页面栈，从而解决页面栈回退问题。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/14/leakcanary2源码分析/" rel="next" title="leakcanary2源码分析">
+                <i class="fa fa-chevron-left"></i> leakcanary2源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#跨进程调用"><span class="nav-number">1.</span> <span class="nav-text">跨进程调用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ContentProvider跨进程调用"><span class="nav-number">1.1.</span> <span class="nav-text">ContentProvider跨进程调用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#activity代理"><span class="nav-number">1.2.</span> <span class="nav-text">activity代理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#messenger"><span class="nav-number">1.3.</span> <span class="nav-text">messenger</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DeathRecipient"><span class="nav-number">2.</span> <span class="nav-text">DeathRecipient</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#跨进程读写sp"><span class="nav-number">3.</span> <span class="nav-text">跨进程读写sp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插件页面栈"><span class="nav-number">4.</span> <span class="nav-text">插件页面栈</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/08/15/小程序跨进程那些事儿/';
+          this.page.identifier = '2019/08/15/小程序跨进程那些事儿/';
+          this.page.title = '小程序跨进程那些事儿';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
