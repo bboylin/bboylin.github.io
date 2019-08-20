@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Android,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="前言lambda表达式我们都用过，但是字节码层面Java是如何处理lambda这个语法糖的呢？Android上是否有对lambda做特殊处理？带着这俩问题，本文将以几段代码作为示例为你揭开lambda背后的黑科技。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How Lambda Works">
+<meta property="og:url" content="https://bboylin.github.io/2019/08/19/how-lambda-works/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="前言lambda表达式我们都用过，但是字节码层面Java是如何处理lambda这个语法糖的呢？Android上是否有对lambda做特殊处理？带着这俩问题，本文将以几段代码作为示例为你揭开lambda背后的黑科技。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-08-20T15:48:22.845Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How Lambda Works">
+<meta name="twitter:description" content="前言lambda表达式我们都用过，但是字节码层面Java是如何处理lambda这个语法糖的呢？Android上是否有对lambda做特殊处理？带着这俩问题，本文将以几段代码作为示例为你揭开lambda背后的黑科技。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/08/19/how-lambda-works/">
+
+
+
+
+
+  <title>How Lambda Works | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/08/19/how-lambda-works/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">How Lambda Works</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-08-19T22:33:20+08:00">
+                2019-08-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/08/19/how-lambda-works/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/08/19/how-lambda-works/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>lambda表达式我们都用过，但是字节码层面Java是如何处理lambda这个语法糖的呢？Android上是否有对lambda做特殊处理？带着这俩问题，本文将以几段代码作为示例为你揭开lambda背后的黑科技。<a id="more"></a></p>
+<h3 id="invokedynamic-on-JVM"><a href="#invokedynamic-on-JVM" class="headerlink" title="invokedynamic on JVM"></a>invokedynamic on JVM</h3><p>以这段代码为例:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Consumer&lt;String&gt; consumer = s -&gt; System.out.println(s);</span><br><span class="line">        consumer.accept(<span class="string">"hello world"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">accept</span><span class="params">(T t)</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这是个最简单的带有一个参数的lambda，通过命令：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  javac Test.java</span><br><span class="line">➜  javap -verbose Test</span><br></pre></td></tr></table></figure></p>
+<p>即可查看其字节码，可以看到main方法字节码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(java.lang.String[])</span></span>;</span><br><span class="line">    descriptor: ([Ljava/lang/String;)V</span><br><span class="line">    flags: ACC_PUBLIC, ACC_STATIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, locals=<span class="number">2</span>, args_size=<span class="number">1</span></span><br><span class="line">         0: invokedynamic #2,  0              // InvokeDynamic #0:accept:()LTest$Consumer;</span><br><span class="line">         <span class="number">5</span>: astore_1</span><br><span class="line">         <span class="number">6</span>: aload_1</span><br><span class="line">         7: ldc           #3                  // String hello world</span><br><span class="line">         9: invokeinterface #4,  2            // InterfaceMethod Test$Consumer.accept:(Ljava/lang/Object;)V</span><br><span class="line">        <span class="number">14</span>: <span class="keyword">return</span></span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">12</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">13</span>: <span class="number">6</span></span><br><span class="line">        line <span class="number">14</span>: <span class="number">14</span></span><br></pre></td></tr></table></figure></p>
+<p>不难看懂，首先通过invokedynamic返回了一个Consumer实例，然后将该实例从操作数栈存入局部变量表第2个变量，接着从局部变量表把该实例推到操作数栈，把常量”hello world”推到操作数栈，通过invokeinterface调用该实例的accept方法。</p>
+<p>invokedynamic其实调的是<code>BootstrapMethod</code>:<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">InnerClasses:</span><br><span class="line">     static #10= #9 of #7; //Consumer=class Test$Consumer of class Test</span><br><span class="line">     public static final #52= #51 of #54; //Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles</span><br><span class="line">BootstrapMethods:</span><br><span class="line">  0: #24 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;</span><br><span class="line">    Method arguments:</span><br><span class="line">      #25 (Ljava/lang/Object;)V</span><br><span class="line">      #26 invokestatic Test.lambda$main$0:(Ljava/lang/Object;)V</span><br><span class="line">      #25 (Ljava/lang/Object;)V</span><br></pre></td></tr></table></figure></p>
+<p>可见实际上invokedynamic调的是<code>LambdaMetafactory.metafactory</code>方法。为了方便看代码，我直接用<a href="http://benf.org/other/cfr/" target="_blank" rel="noopener">cfr</a> decompile class还原desugaring后的Java代码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">➜  java -jar /Users/denglin03/Downloads/cfr-<span class="number">0.146</span>.jar /Users/denglin03/Desktop/Test.class --decodelambdas <span class="keyword">false</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Decompiled with CFR 0.146.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">import</span> java.io.PrintStream;</span><br><span class="line"><span class="keyword">import</span> java.lang.invoke.LambdaMetafactory;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    Test() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] arrstring)</span> </span>&#123;</span><br><span class="line">        Consumer&lt;Object&gt; consumer = (Consumer&lt;Object&gt;)LambdaMetafactory.metafactory(<span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, (Ljava/lang/Object;)V, lambda$main$<span class="number">0</span>(java.lang.Object ), (Ljava/lang/Object;)V)();</span><br><span class="line">        consumer.accept(<span class="string">"hello world"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="comment">/* synthetic */</span> <span class="keyword">void</span> lambda$main$<span class="number">0</span>(Object object) &#123;</span><br><span class="line">        System.out.println(object);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accept</span><span class="params">(T var1)</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>确认调的是<code>LambdaMetafactory.metafactory</code>无疑，jdk源码找到<code>LambdaMetafactory</code>源码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Facilitates the creation of simple "function objects" that implement one</span></span><br><span class="line"><span class="comment"> * or more interfaces by delegation to a provided &#123;<span class="doctag">@link</span> MethodHandle&#125;,</span></span><br><span class="line"><span class="comment"> * after appropriate type adaptation and partial evaluation of arguments.</span></span><br><span class="line"><span class="comment"> * Typically used as a &lt;em&gt;bootstrap method&lt;/em&gt; for &#123;<span class="doctag">@code</span> invokedynamic&#125;</span></span><br><span class="line"><span class="comment"> * call sites, to support the &lt;em&gt;lambda expression&lt;/em&gt; and &lt;em&gt;method</span></span><br><span class="line"><span class="comment"> * reference expression&lt;/em&gt; features of the Java Programming Language.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;This is the standard, streamlined metafactory; additional flexibility</span></span><br><span class="line"><span class="comment"> * is provided by &#123;<span class="doctag">@link</span> #altMetafactory(MethodHandles.Lookup, String, MethodType, Object...)&#125;.</span></span><br><span class="line"><span class="comment"> * A general description of the behavior of this method is provided</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> LambdaMetafactory above&#125;.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;When the target of the &#123;<span class="doctag">@code</span> CallSite&#125; returned from this method is</span></span><br><span class="line"><span class="comment"> * invoked, the resulting function objects are instances of a class which</span></span><br><span class="line"><span class="comment"> * implements the interface named by the return type of &#123;<span class="doctag">@code</span> invokedType&#125;,</span></span><br><span class="line"><span class="comment"> * declares a method with the name given by &#123;<span class="doctag">@code</span> invokedName&#125; and the</span></span><br><span class="line"><span class="comment"> * signature given by &#123;<span class="doctag">@code</span> samMethodType&#125;.  It may also override additional</span></span><br><span class="line"><span class="comment"> * methods from &#123;<span class="doctag">@code</span> Object&#125;.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> caller Represents a lookup context with the accessibility</span></span><br><span class="line"><span class="comment"> *               privileges of the caller.  When used with &#123;<span class="doctag">@code</span> invokedynamic&#125;,</span></span><br><span class="line"><span class="comment"> *               this is stacked automatically by the VM.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> invokedName The name of the method to implement.  When used with</span></span><br><span class="line"><span class="comment"> *                    &#123;<span class="doctag">@code</span> invokedynamic&#125;, this is provided by the</span></span><br><span class="line"><span class="comment"> *                    &#123;<span class="doctag">@code</span> NameAndType&#125; of the &#123;<span class="doctag">@code</span> InvokeDynamic&#125;</span></span><br><span class="line"><span class="comment"> *                    structure and is stacked automatically by the VM.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> invokedType The expected signature of the &#123;<span class="doctag">@code</span> CallSite&#125;.  The</span></span><br><span class="line"><span class="comment"> *                    parameter types represent the types of capture variables;</span></span><br><span class="line"><span class="comment"> *                    the return type is the interface to implement.   When</span></span><br><span class="line"><span class="comment"> *                    used with &#123;<span class="doctag">@code</span> invokedynamic&#125;, this is provided by</span></span><br><span class="line"><span class="comment"> *                    the &#123;<span class="doctag">@code</span> NameAndType&#125; of the &#123;<span class="doctag">@code</span> InvokeDynamic&#125;</span></span><br><span class="line"><span class="comment"> *                    structure and is stacked automatically by the VM.</span></span><br><span class="line"><span class="comment"> *                    In the event that the implementation method is an</span></span><br><span class="line"><span class="comment"> *                    instance method and this signature has any parameters,</span></span><br><span class="line"><span class="comment"> *                    the first parameter in the invocation signature must</span></span><br><span class="line"><span class="comment"> *                    correspond to the receiver.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> samMethodType Signature and return type of method to be implemented</span></span><br><span class="line"><span class="comment"> *                      by the function object.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> implMethod A direct method handle describing the implementation</span></span><br><span class="line"><span class="comment"> *                   method which should be called (with suitable adaptation</span></span><br><span class="line"><span class="comment"> *                   of argument types, return types, and with captured</span></span><br><span class="line"><span class="comment"> *                   arguments prepended to the invocation arguments) at</span></span><br><span class="line"><span class="comment"> *                   invocation time.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> instantiatedMethodType The signature and return type that should</span></span><br><span class="line"><span class="comment"> *                               be enforced dynamically at invocation time.</span></span><br><span class="line"><span class="comment"> *                               This may be the same as &#123;<span class="doctag">@code</span> samMethodType&#125;,</span></span><br><span class="line"><span class="comment"> *                               or may be a specialization of it.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> a CallSite whose target can be used to perform capture, generating</span></span><br><span class="line"><span class="comment"> *         instances of the interface named by &#123;<span class="doctag">@code</span> invokedType&#125;</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> LambdaConversionException If any of the linkage invariants</span></span><br><span class="line"><span class="comment"> *                                   described &#123;<span class="doctag">@link</span> LambdaMetafactory above&#125;</span></span><br><span class="line"><span class="comment"> *                                   are violated</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> CallSite <span class="title">metafactory</span><span class="params">(MethodHandles.Lookup caller,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   String invokedName,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   MethodType invokedType,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   MethodType samMethodType,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   MethodHandle implMethod,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   MethodType instantiatedMethodType)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> LambdaConversionException </span>&#123;</span><br><span class="line">    AbstractValidatingLambdaMetafactory mf;</span><br><span class="line">    mf = <span class="keyword">new</span> InnerClassLambdaMetafactory(caller, invokedType,</span><br><span class="line">                                         invokedName, samMethodType,</span><br><span class="line">                                         implMethod, instantiatedMethodType,</span><br><span class="line">                                         <span class="keyword">false</span>, EMPTY_CLASS_ARRAY, EMPTY_MT_ARRAY);</span><br><span class="line">    mf.validateMetafactoryArgs();</span><br><span class="line">    <span class="keyword">return</span> mf.buildCallSite();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>主要是调了<code>InnerClassLambdaMetafactory</code>的<code>buildCallSite</code>方法返回类一个callsite：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Build the CallSite. Generate a class file which implements the functional</span></span><br><span class="line"><span class="comment"> * interface, define the class, if there are no parameters create an instance</span></span><br><span class="line"><span class="comment"> * of the class which the CallSite will return, otherwise, generate handles</span></span><br><span class="line"><span class="comment"> * which will call the class' constructor.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> a CallSite, which, when invoked, will return an instance of the</span></span><br><span class="line"><span class="comment"> * functional interface</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> ReflectiveOperationException</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> LambdaConversionException If properly formed functional interface</span></span><br><span class="line"><span class="comment"> * is not found</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function">CallSite <span class="title">buildCallSite</span><span class="params">()</span> <span class="keyword">throws</span> LambdaConversionException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Class&lt;?&gt; innerClass = spinInnerClass();</span><br><span class="line">    <span class="keyword">if</span> (invokedType.parameterCount() == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">final</span> Constructor&lt;?&gt;[] ctrs = AccessController.doPrivileged(</span><br><span class="line">                <span class="keyword">new</span> PrivilegedAction&lt;Constructor&lt;?&gt;[]&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> Constructor&lt;?&gt;[] run() &#123;</span><br><span class="line">                Constructor&lt;?&gt;[] ctrs = innerClass.getDeclaredConstructors();</span><br><span class="line">                <span class="keyword">if</span> (ctrs.length == <span class="number">1</span>) &#123;</span><br><span class="line">                    <span class="comment">// The lambda implementing inner class constructor is private, set</span></span><br><span class="line">                    <span class="comment">// it accessible (by us) before creating the constant sole instance</span></span><br><span class="line">                    ctrs[<span class="number">0</span>].setAccessible(<span class="keyword">true</span>);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> ctrs;</span><br><span class="line">            &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">        <span class="keyword">if</span> (ctrs.length != <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> LambdaConversionException(<span class="string">"Expected one lambda constructor for "</span></span><br><span class="line">                    + innerClass.getCanonicalName() + <span class="string">", got "</span> + ctrs.length);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Object inst = ctrs[<span class="number">0</span>].newInstance();</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> ConstantCallSite(MethodHandles.constant(samBase, inst));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (ReflectiveOperationException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> LambdaConversionException(<span class="string">"Exception instantiating lambda object"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            UNSAFE.ensureClassInitialized(innerClass);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> ConstantCallSite(</span><br><span class="line">                    MethodHandles.Lookup.IMPL_LOOKUP</span><br><span class="line">                         .findStatic(innerClass, NAME_FACTORY, invokedType));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (ReflectiveOperationException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> LambdaConversionException(<span class="string">"Exception finding constructor"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>callsite是methodHandle的holder，用于将invokedynamic指令委托给methodHandle执行，这个methodhandle指向的就是<code>spinInnerClass()</code>生成的实现了我们lambda对应的functional interface的实例的某个方法，这个方法参数类型转换后直接调用demo中的<code>lambda$main$0</code>方法<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="comment">/* synthetic */</span> <span class="keyword">void</span> lambda$main$<span class="number">0</span>(Object object) &#123;</span><br><span class="line">    System.out.println(object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以从<code>spinInnerClass()</code>源码中证实：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Generate a class file which implements the functional</span></span><br><span class="line"><span class="comment"> * interface, define and return the class.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@implNote</span> The class that is generated does not include signature</span></span><br><span class="line"><span class="comment"> * information for exceptions that may be present on the SAM method.</span></span><br><span class="line"><span class="comment"> * This is to reduce classfile size, and is harmless as checked exceptions</span></span><br><span class="line"><span class="comment"> * are erased anyway, no one will ever compile against this classfile,</span></span><br><span class="line"><span class="comment"> * and we make no guarantees about the reflective properties of lambda</span></span><br><span class="line"><span class="comment"> * objects.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> a Class which implements the functional interface</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> LambdaConversionException If properly formed functional interface</span></span><br><span class="line"><span class="comment"> * is not found</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> Class&lt;?&gt; spinInnerClass() <span class="keyword">throws</span> LambdaConversionException &#123;</span><br><span class="line">    String[] interfaces;</span><br><span class="line">    String samIntf = samBase.getName().replace(<span class="string">'.'</span>, <span class="string">'/'</span>);</span><br><span class="line">    <span class="keyword">boolean</span> accidentallySerializable = !isSerializable &amp;&amp; Serializable.class.isAssignableFrom(samBase);</span><br><span class="line">    <span class="keyword">if</span> (markerInterfaces.length == <span class="number">0</span>) &#123;</span><br><span class="line">        interfaces = <span class="keyword">new</span> String[]&#123;samIntf&#125;;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Assure no duplicate interfaces (ClassFormatError)</span></span><br><span class="line">        Set&lt;String&gt; itfs = <span class="keyword">new</span> LinkedHashSet&lt;&gt;(markerInterfaces.length + <span class="number">1</span>);</span><br><span class="line">        itfs.add(samIntf);</span><br><span class="line">        <span class="keyword">for</span> (Class&lt;?&gt; markerInterface : markerInterfaces) &#123;</span><br><span class="line">            itfs.add(markerInterface.getName().replace(<span class="string">'.'</span>, <span class="string">'/'</span>));</span><br><span class="line">            accidentallySerializable |= !isSerializable &amp;&amp; Serializable.class.isAssignableFrom(markerInterface);</span><br><span class="line">        &#125;</span><br><span class="line">        interfaces = itfs.toArray(<span class="keyword">new</span> String[itfs.size()]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用ASM生成lambdaClassName这个类</span></span><br><span class="line">    cw.visit(CLASSFILE_VERSION, ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC,</span><br><span class="line">             lambdaClassName, <span class="keyword">null</span>,</span><br><span class="line">             JAVA_LANG_OBJECT, interfaces);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Generate final fields to be filled in by constructor</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; argDescs.length; i++) &#123;</span><br><span class="line">        FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL,</span><br><span class="line">                                        argNames[i],</span><br><span class="line">                                        argDescs[i],</span><br><span class="line">                                        <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">        fv.visitEnd();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    generateConstructor();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (invokedType.parameterCount() != <span class="number">0</span>) &#123;</span><br><span class="line">        generateFactory();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Forward the SAM method</span></span><br><span class="line">    MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, samMethodName,</span><br><span class="line">                                      samMethodType.toMethodDescriptorString(), <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">    mv.visitAnnotation(<span class="string">"Ljava/lang/invoke/LambdaForm$Hidden;"</span>, <span class="keyword">true</span>);</span><br><span class="line">    <span class="comment">// 生成调用implMethod方法的方法</span></span><br><span class="line">    <span class="keyword">new</span> ForwardingMethodGenerator(mv).generate(samMethodType);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Forward the bridges</span></span><br><span class="line">    <span class="keyword">if</span> (additionalBridges != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (MethodType mt : additionalBridges) &#123;</span><br><span class="line">            mv = cw.visitMethod(ACC_PUBLIC|ACC_BRIDGE, samMethodName,</span><br><span class="line">                                mt.toMethodDescriptorString(), <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">            mv.visitAnnotation(<span class="string">"Ljava/lang/invoke/LambdaForm$Hidden;"</span>, <span class="keyword">true</span>);</span><br><span class="line">            <span class="keyword">new</span> ForwardingMethodGenerator(mv).generate(mt);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (isSerializable)</span><br><span class="line">        generateSerializationFriendlyMethods();</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (accidentallySerializable)</span><br><span class="line">        generateSerializationHostileMethods();</span><br><span class="line"></span><br><span class="line">    cw.visitEnd();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Define the generated class in this VM.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">byte</span>[] classBytes = cw.toByteArray();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If requested, dump out to a file for debugging purposes</span></span><br><span class="line">    <span class="keyword">if</span> (dumper != <span class="keyword">null</span>) &#123;</span><br><span class="line">        AccessController.doPrivileged(<span class="keyword">new</span> PrivilegedAction&lt;Void&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> Void <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                dumper.dumpClass(lambdaClassName, classBytes);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="keyword">null</span>,</span><br><span class="line">        <span class="keyword">new</span> FilePermission(<span class="string">"&lt;&lt;ALL FILES&gt;&gt;"</span>, <span class="string">"read, write"</span>),</span><br><span class="line">        <span class="comment">// createDirectories may need it</span></span><br><span class="line">        <span class="keyword">new</span> PropertyPermission(<span class="string">"user.dir"</span>, <span class="string">"read"</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> UNSAFE.defineAnonymousClass(targetClass, classBytes, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中lambdaClassName和implMethod取值如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lambdaClassName = targetClass.getName().replace(<span class="string">'.'</span>, <span class="string">'/'</span>) + <span class="string">"$$Lambda$"</span> + counter.incrementAndGet();</span><br><span class="line"><span class="comment">// implMethod就是metafactory的第五个参数：lambda$main$0(java.lang.Object )</span></span><br></pre></td></tr></table></figure></p>
+<p>到这里我们已经大致知道lambda在JVM背后的黑科技了，通过invokedynamic导向jdk中的实现callsite，jdk中通过ASM生成对应的lambda类，原caller类中插入新的static method，负责lambda具体逻辑。callsite调用指向methodhandle，进而调到lambda类中的方法，然后调到lambda具体逻辑。这样做的好处其实主要还是灵活，一方面减少字节码大小，另一方面后续变更实现的话不必增加新的opcode，在jdk中更新即可。可以看到由于本例中lambda只有一个参数，所以生成的static method也只有一个参数：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="comment">/* synthetic */</span> <span class="keyword">void</span> lambda$main$<span class="number">0</span>(Object object) &#123;</span><br><span class="line">    System.out.println(object);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>但是如果lambda中使用类外部变量的话，即使lambda只有一个参数，lambda中每一个用到的外部变量也会作为一个独立的参数加到static method参数中。</p>
+<h3 id="D8-on-Android"><a href="#D8-on-Android" class="headerlink" title="D8 on Android"></a>D8 on Android</h3><p>前面我们分析了JVM上lambda是通过invokedynamic指令调用java.lang.invoke包下LambdaMetafactory的metafactory方法来实现的。但是Android Runtime并没有LambdaMetafactory这个类，相当于JVM那套在Android上行不通。详见<a href="https://developer.android.com/reference/java/lang/invoke/package-summary" target="_blank" rel="noopener">官方文档</a>和<a href="https://android.googlesource.com/platform/libcore/+/master/ojluni/src/main/java/java/lang/invoke/" target="_blank" rel="noopener">AOSP源码</a>。那Android上如何处理lambda？</p>
+<p>我们试试用dx把class转dex分析：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">➜ dx --dex --output . *.class</span><br><span class="line">Uncaught translation error: com.android.dx.cf.code.SimException:</span><br><span class="line">  ERROR in Test.main:([Ljava/lang/String;)V:</span><br><span class="line">    invalid opcode ba - invokedynamic <span class="keyword">requires</span> --min-sdk-version &gt;= <span class="number">26</span></span><br><span class="line">    (currently <span class="number">13</span>)</span><br><span class="line"><span class="number">1</span> error; aborting</span><br></pre></td></tr></table></figure></p>
+<p>可见android在API26后才支持invokedynamic指令。那么在低版本的Android上如何保证兼容性呢？</p>
+<h4 id="desugaring"><a href="#desugaring" class="headerlink" title="desugaring"></a>desugaring</h4><p>在dx时代，desugaring和proguard一样，属于独立的transformation，在dx将class转dex之前已经执行完了desugaring。而d8 dexer则包括了desugaring功能，我们同样使用d8来把class转dex看看。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br></pre></td><td class="code"><pre><span class="line">➜  d8 --output . Test.class Test\$Consumer.class</span><br><span class="line">➜  dexdump -d classes.dex</span><br><span class="line">Processing <span class="string">'classes.dex'</span>...</span><br><span class="line">Opened <span class="string">'classes.dex'</span>, DEX version <span class="string">'035'</span></span><br><span class="line">Class #0            -</span><br><span class="line">  Class descriptor  : <span class="string">'LTest$Consumer;'</span></span><br><span class="line">  Access flags      : <span class="number">0x0600</span> (INTERFACE ABSTRACT)</span><br><span class="line">  Superclass        : <span class="string">'Ljava/lang/Object;'</span></span><br><span class="line">  Interfaces        -</span><br><span class="line">  Static fields     -</span><br><span class="line">  Instance fields   -</span><br><span class="line">  Direct methods    -</span><br><span class="line">  Virtual methods   -</span><br><span class="line">    #0              : (in LTest$Consumer;)</span><br><span class="line">      name          : <span class="string">'accept'</span></span><br><span class="line">      type          : <span class="string">'(Ljava/lang/Object;)V'</span></span><br><span class="line">      access        : <span class="number">0x0401</span> (PUBLIC ABSTRACT)</span><br><span class="line">      code          : (none)</span><br><span class="line"></span><br><span class="line">  source_file_idx   : <span class="number">17</span> (Test.java)</span><br><span class="line"></span><br><span class="line">Class #1            -</span><br><span class="line">  Class descriptor  : <span class="string">'LTest;'</span></span><br><span class="line">  Access flags      : <span class="number">0x0000</span> ()</span><br><span class="line">  Superclass        : <span class="string">'Ljava/lang/Object;'</span></span><br><span class="line">  Interfaces        -</span><br><span class="line">  Static fields     -</span><br><span class="line">  Instance fields   -</span><br><span class="line">  Direct methods    -</span><br><span class="line">    #0              : (in LTest;)</span><br><span class="line">      name          : <span class="string">'&lt;init&gt;'</span></span><br><span class="line">      type          : <span class="string">'()V'</span></span><br><span class="line">      access        : <span class="number">0x10000</span> (CONSTRUCTOR)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">1</span></span><br><span class="line">      ins           : <span class="number">1</span></span><br><span class="line">      outs          : <span class="number">1</span></span><br><span class="line">      insns size    : <span class="number">4</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">00024</span>c:                                        |[<span class="number">00024</span>c] Test.&lt;init&gt;:()V</span><br><span class="line"><span class="number">00025</span>c: <span class="number">7010</span> <span class="number">0800</span> <span class="number">0000</span>                         |<span class="number">0000</span>: invoke-direct &#123;v0&#125;, Ljava/lang/Object;.&lt;init&gt;:()V <span class="comment">// method@0008</span></span><br><span class="line"><span class="number">000262</span>: <span class="number">0e00</span>                                   |<span class="number">0003</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">        <span class="number">0x0000</span> line=<span class="number">3</span></span><br><span class="line">      locals        :</span><br><span class="line">        <span class="number">0x0000</span> - <span class="number">0x0004</span> reg=<span class="number">0</span> <span class="keyword">this</span> LTest;</span><br><span class="line"></span><br><span class="line">    #1              : (in LTest;)</span><br><span class="line">      name          : <span class="string">'lambda$main$0'</span></span><br><span class="line">      type          : <span class="string">'(Ljava/lang/Object;)V'</span></span><br><span class="line">      access        : <span class="number">0x1008</span> (STATIC SYNTHETIC)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">2</span></span><br><span class="line">      ins           : <span class="number">1</span></span><br><span class="line">      outs          : <span class="number">2</span></span><br><span class="line">      insns size    : <span class="number">6</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">000264</span>:                                        |[<span class="number">000264</span>] Test.lambda$main$<span class="number">0</span>:(Ljava/lang/Object;)V</span><br><span class="line"><span class="number">000274</span>: <span class="number">6200</span> <span class="number">0100</span>                              |<span class="number">0000</span>: sget-object v0, Ljava/lang/System;.out:Ljava/io/PrintStream; <span class="comment">// field@0001</span></span><br><span class="line"><span class="number">000278</span>: <span class="number">6e20</span> <span class="number">0700</span> <span class="number">1000</span>                         |<span class="number">0002</span>: invoke-virtual &#123;v0, v1&#125;, Ljava/io/PrintStream;.println:(Ljava/lang/Object;)V <span class="comment">// method@0007</span></span><br><span class="line"><span class="number">00027</span>e: <span class="number">0e00</span>                                   |<span class="number">0005</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">        <span class="number">0x0000</span> line=<span class="number">12</span></span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">    #2              : (in LTest;)</span><br><span class="line">      name          : <span class="string">'main'</span></span><br><span class="line">      type          : <span class="string">'([Ljava/lang/String;)V'</span></span><br><span class="line">      access        : <span class="number">0x0009</span> (PUBLIC STATIC)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">2</span></span><br><span class="line">      ins           : <span class="number">1</span></span><br><span class="line">      outs          : <span class="number">2</span></span><br><span class="line">      insns size    : <span class="number">8</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">000280</span>:                                        |[<span class="number">000280</span>] Test.main:([Ljava/lang/String;)V</span><br><span class="line"><span class="number">000290</span>: <span class="number">6201</span> <span class="number">0000</span>                              |<span class="number">0000</span>: sget-object v1, L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;.INSTANCE:L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0; <span class="comment">// field@0000</span></span><br><span class="line"><span class="number">000294</span>: <span class="number">1</span>a00 <span class="number">1700</span>                              |<span class="number">0002</span>: <span class="keyword">const</span>-string v0, <span class="string">"hello world"</span> <span class="comment">// string@0017</span></span><br><span class="line"><span class="number">000298</span>: <span class="number">7220</span> <span class="number">0300</span> <span class="number">0100</span>                         |<span class="number">0004</span>: invoke-<span class="class"><span class="keyword">interface</span> </span>&#123;v1, v0&#125;, LTest$Consumer;.accept:(Ljava/lang/Object;)V <span class="comment">// method@0003</span></span><br><span class="line"><span class="number">00029</span>e: <span class="number">0e00</span>                                   |<span class="number">0007</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">        <span class="number">0x0000</span> line=<span class="number">12</span></span><br><span class="line">        <span class="number">0x0002</span> line=<span class="number">13</span></span><br><span class="line">        <span class="number">0x0007</span> line=<span class="number">14</span></span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  Virtual methods   -</span><br><span class="line">  source_file_idx   : <span class="number">17</span> (Test.java)</span><br><span class="line"></span><br><span class="line">Class #2            -</span><br><span class="line">  Class descriptor  : <span class="string">'L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;'</span></span><br><span class="line">  Access flags      : <span class="number">0x1011</span> (PUBLIC FINAL SYNTHETIC)</span><br><span class="line">  Superclass        : <span class="string">'Ljava/lang/Object;'</span></span><br><span class="line">  Interfaces        -</span><br><span class="line">    #0              : 'LTest$Consumer;'</span><br><span class="line">  Static fields     -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;)</span><br><span class="line">      name          : <span class="string">'INSTANCE'</span></span><br><span class="line">      type          : <span class="string">'L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;'</span></span><br><span class="line">      access        : <span class="number">0x1019</span> (PUBLIC STATIC FINAL SYNTHETIC)</span><br><span class="line">  Instance fields   -</span><br><span class="line">  Direct methods    -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;)</span><br><span class="line">      name          : <span class="string">'&lt;clinit&gt;'</span></span><br><span class="line">      type          : <span class="string">'()V'</span></span><br><span class="line">      access        : <span class="number">0x11008</span> (STATIC SYNTHETIC CONSTRUCTOR)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">1</span></span><br><span class="line">      ins           : <span class="number">0</span></span><br><span class="line">      outs          : <span class="number">1</span></span><br><span class="line">      insns size    : <span class="number">8</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">0001f</span>c:                                        |[<span class="number">0001f</span>c] -..Lambda.Test.VtEj3BunDEASiYmhFnrh0idYOr0.&lt;clinit&gt;:()V</span><br><span class="line"><span class="number">00020</span>c: <span class="number">2200</span> <span class="number">0000</span>                              |<span class="number">0000</span>: <span class="keyword">new</span>-instance v0, L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0; <span class="comment">// type@0000</span></span><br><span class="line"><span class="number">000210</span>: <span class="number">7010</span> <span class="number">0100</span> <span class="number">0000</span>                         |<span class="number">0002</span>: invoke-direct &#123;v0&#125;, L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;.&lt;init&gt;:()V <span class="comment">// method@0001</span></span><br><span class="line"><span class="number">000216</span>: <span class="number">6900</span> <span class="number">0000</span>                              |<span class="number">0005</span>: sput-object v0, L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;.INSTANCE:L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0; <span class="comment">// field@0000</span></span><br><span class="line"><span class="number">00021</span>a: <span class="number">0e00</span>                                   |<span class="number">0007</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">    #1              : (in L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;)</span><br><span class="line">      name          : <span class="string">'&lt;init&gt;'</span></span><br><span class="line">      type          : <span class="string">'()V'</span></span><br><span class="line">      access        : <span class="number">0x11002</span> (PRIVATE SYNTHETIC CONSTRUCTOR)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">1</span></span><br><span class="line">      ins           : <span class="number">1</span></span><br><span class="line">      outs          : <span class="number">1</span></span><br><span class="line">      insns size    : <span class="number">4</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">00021</span>c:                                        |[<span class="number">00021</span>c] -..Lambda.Test.VtEj3BunDEASiYmhFnrh0idYOr0.&lt;init&gt;:()V</span><br><span class="line"><span class="number">00022</span>c: <span class="number">7010</span> <span class="number">0800</span> <span class="number">0000</span>                         |<span class="number">0000</span>: invoke-direct &#123;v0&#125;, Ljava/lang/Object;.&lt;init&gt;:()V <span class="comment">// method@0008</span></span><br><span class="line"><span class="number">000232</span>: <span class="number">0e00</span>                                   |<span class="number">0003</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  Virtual methods   -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0;)</span><br><span class="line">      name          : <span class="string">'accept'</span></span><br><span class="line">      type          : <span class="string">'(Ljava/lang/Object;)V'</span></span><br><span class="line">      access        : <span class="number">0x0011</span> (PUBLIC FINAL)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">2</span></span><br><span class="line">      ins           : <span class="number">2</span></span><br><span class="line">      outs          : <span class="number">1</span></span><br><span class="line">      insns size    : <span class="number">4</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="number">000234</span>:                                        |[<span class="number">000234</span>] -..Lambda.Test.VtEj3BunDEASiYmhFnrh0idYOr0.accept:(Ljava/lang/Object;)V</span><br><span class="line"><span class="number">000244</span>: <span class="number">7110</span> <span class="number">0500</span> <span class="number">0100</span>                         |<span class="number">0000</span>: invoke-<span class="keyword">static</span> &#123;v1&#125;, LTest;.lambda$main$<span class="number">0</span>:(Ljava/lang/Object;)V <span class="comment">// method@0005</span></span><br><span class="line"><span class="number">00024</span>a: <span class="number">0e00</span>                                   |<span class="number">0003</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  source_file_idx   : <span class="number">24</span> (lambda)</span><br></pre></td></tr></table></figure></p>
+<p>可以看到desugaring之后仍然是<code>lambda$main$0</code>方法负责具体逻辑，同时生成了一个<code>-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0</code>类，其实现了Consumer接口，accept方法间接调用了Test类的<code>lambda$main$0</code>方法，同时存在静态单例对象<code>INSTANCE</code>。原Test类的<code>main</code>方法调用<code>-$$Lambda$Test$VtEj3BunDEASiYmhFnrh0idYOr0</code>类的<code>INSTANCE</code>对象的accept方法传入”hello world”。</p>
+<p>如果lambda中用到了外部变量呢？我们改下demo：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String from = <span class="string">"lin"</span>;</span><br><span class="line">        Consumer consumer = s -&gt; System.out.println(from + s);</span><br><span class="line">        consumer.accept(<span class="string">"hello world"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">interface</span> <span class="title">Consumer</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">void</span> <span class="title">accept</span><span class="params">(T t)</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>再次利用d8查看dex字节码可知：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// lambda$main$0方法新增了一个参数，继续负责lambda具体逻辑</span></span><br><span class="line"><span class="number">0002</span>c4:                                        |[<span class="number">0002</span>c4] Test.lambda$main$<span class="number">0</span>:(Ljava/lang/String;Ljava/lang/Object;)V</span><br><span class="line"><span class="number">0002</span>d4: <span class="number">6200</span> <span class="number">0100</span>                              |<span class="number">0000</span>: sget-object v0, Ljava/lang/System;.out:Ljava/io/PrintStream; <span class="comment">// field@0001</span></span><br><span class="line"><span class="number">0002</span>d8: <span class="number">2201</span> <span class="number">0</span>a00                              |<span class="number">0002</span>: <span class="keyword">new</span>-instance v1, Ljava/lang/StringBuilder; <span class="comment">// type@000a</span></span><br><span class="line"><span class="number">0002</span>dc: <span class="number">7010</span> <span class="number">0800</span> <span class="number">0100</span>                         |<span class="number">0004</span>: invoke-direct &#123;v1&#125;, Ljava/lang/StringBuilder;.&lt;init&gt;:()V <span class="comment">// method@0008</span></span><br><span class="line"><span class="number">0002e2</span>: <span class="number">6e20</span> <span class="number">0</span>a00 <span class="number">2100</span>                         |<span class="number">0007</span>: invoke-virtual &#123;v1, v2&#125;, Ljava/lang/StringBuilder;.append:(Ljava/lang/String;)Ljava/lang/StringBuilder; <span class="comment">// method@000a</span></span><br><span class="line"><span class="number">0002e8</span>: <span class="number">6e20</span> <span class="number">0900</span> <span class="number">3100</span>                         |<span class="number">000</span>a: invoke-virtual &#123;v1, v3&#125;, Ljava/lang/StringBuilder;.append:(Ljava/lang/Object;)Ljava/lang/StringBuilder; <span class="comment">// method@0009</span></span><br><span class="line"><span class="number">0002</span>ee: <span class="number">6e10</span> <span class="number">0b00</span> <span class="number">0100</span>                         |<span class="number">000</span>d: invoke-virtual &#123;v1&#125;, Ljava/lang/StringBuilder;.toString:()Ljava/lang/String; <span class="comment">// method@000b</span></span><br><span class="line"><span class="number">0002f</span>4: <span class="number">0</span>c02                                   |<span class="number">0010</span>: move-result-object v2</span><br><span class="line"><span class="number">0002f</span>6: <span class="number">6e20</span> <span class="number">0600</span> <span class="number">2000</span>                         |<span class="number">0011</span>: invoke-virtual &#123;v0, v2&#125;, Ljava/io/PrintStream;.println:(Ljava/lang/String;)V <span class="comment">// method@0006</span></span><br><span class="line"><span class="number">0002f</span>c: <span class="number">0e00</span>                                   |<span class="number">0014</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">        <span class="number">0x0000</span> line=<span class="number">13</span></span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">    #2              : (in LTest;)</span><br><span class="line">      name          : <span class="string">'main'</span></span><br><span class="line">      type          : <span class="string">'([Ljava/lang/String;)V'</span></span><br><span class="line">      access        : <span class="number">0x0009</span> (PUBLIC STATIC)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">2</span></span><br><span class="line">      ins           : <span class="number">1</span></span><br><span class="line">      outs          : <span class="number">2</span></span><br><span class="line">      insns size    : <span class="number">13</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="comment">// main方法new -$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw类实例的时候传入外部变量"lin" ，接着调实例的accept方法传入"hello world"</span></span><br><span class="line"><span class="comment">// 可以看到用了外部变量的情况下没有使用INSTANCE去调accept，而是new了一个实例，因为构造函数需要传入外部变量。</span></span><br><span class="line"><span class="number">000300</span>:                                        |[<span class="number">000300</span>] Test.main:([Ljava/lang/String;)V</span><br><span class="line"><span class="number">000310</span>: <span class="number">1</span>a01 <span class="number">1f</span>00                              |<span class="number">0000</span>: <span class="keyword">const</span>-string v1, <span class="string">"lin: "</span> <span class="comment">// string@001f</span></span><br><span class="line"><span class="number">000314</span>: <span class="number">2200</span> <span class="number">0000</span>                              |<span class="number">0002</span>: <span class="keyword">new</span>-instance v0, L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw; <span class="comment">// type@0000</span></span><br><span class="line"><span class="number">000318</span>: <span class="number">7020</span> <span class="number">0000</span> <span class="number">1000</span>                         |<span class="number">0004</span>: invoke-direct &#123;v0, v1&#125;, L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;.&lt;init&gt;:(Ljava/lang/String;)V <span class="comment">// method@0000</span></span><br><span class="line"><span class="number">00031</span>e: <span class="number">1</span>a01 <span class="number">1</span>c00                              |<span class="number">0007</span>: <span class="keyword">const</span>-string v1, <span class="string">"hello world"</span> <span class="comment">// string@001c</span></span><br><span class="line"><span class="number">000322</span>: <span class="number">7220</span> <span class="number">0200</span> <span class="number">1000</span>                         |<span class="number">0009</span>: invoke-<span class="class"><span class="keyword">interface</span> </span>&#123;v0, v1&#125;, LTest$Consumer;.accept:(Ljava/lang/Object;)V <span class="comment">// method@0002</span></span><br><span class="line"><span class="number">000328</span>: <span class="number">0e00</span>                                   |<span class="number">000</span>c: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">        <span class="number">0x0000</span> line=<span class="number">12</span></span><br><span class="line">        <span class="number">0x0002</span> line=<span class="number">13</span></span><br><span class="line">        <span class="number">0x0007</span> line=<span class="number">14</span></span><br><span class="line">        <span class="number">0x000c</span> line=<span class="number">15</span></span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  Virtual methods   -</span><br><span class="line">  source_file_idx   : <span class="number">19</span> (Test.java)</span><br><span class="line"></span><br><span class="line">Class #2            -</span><br><span class="line">  Class descriptor  : <span class="string">'L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;'</span></span><br><span class="line">  Access flags      : <span class="number">0x1011</span> (PUBLIC FINAL SYNTHETIC)</span><br><span class="line">  Superclass        : <span class="string">'Ljava/lang/Object;'</span></span><br><span class="line">  Interfaces        -</span><br><span class="line">    #0              : 'LTest$Consumer;'</span><br><span class="line">  Static fields     -</span><br><span class="line">  Instance fields   -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;)</span><br><span class="line">      name          : <span class="string">'f$0'</span></span><br><span class="line">      type          : <span class="string">'Ljava/lang/String;'</span></span><br><span class="line">      access        : <span class="number">0x1012</span> (PRIVATE FINAL SYNTHETIC)</span><br><span class="line">  Direct methods    -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;)</span><br><span class="line">      name          : <span class="string">'&lt;init&gt;'</span></span><br><span class="line">      type          : <span class="string">'(Ljava/lang/String;)V'</span></span><br><span class="line">      access        : <span class="number">0x11001</span> (PUBLIC SYNTHETIC CONSTRUCTOR)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">2</span></span><br><span class="line">      ins           : <span class="number">2</span></span><br><span class="line">      outs          : <span class="number">1</span></span><br><span class="line">      insns size    : <span class="number">6</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="comment">// 构造函数将传入的"lin"赋值给内部变量f$0</span></span><br><span class="line"><span class="number">000274</span>:                                        |[<span class="number">000274</span>] -..Lambda.Test.i6YS_4McUAo2DfQmb_xpDZoX2iw.&lt;init&gt;:(Ljava/lang/String;)V</span><br><span class="line"><span class="number">000284</span>: <span class="number">7010</span> <span class="number">0700</span> <span class="number">0000</span>                         |<span class="number">0000</span>: invoke-direct &#123;v0&#125;, Ljava/lang/Object;.&lt;init&gt;:()V <span class="comment">// method@0007</span></span><br><span class="line"><span class="number">00028</span>a: <span class="number">5</span>b01 <span class="number">0000</span>                              |<span class="number">0003</span>: iput-object v1, v0, L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;.f$<span class="number">0</span>:Ljava/lang/String; <span class="comment">// field@0000</span></span><br><span class="line"><span class="number">00028</span>e: <span class="number">0e00</span>                                   |<span class="number">0005</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  Virtual methods   -</span><br><span class="line">    #0              : (in L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;)</span><br><span class="line">      name          : <span class="string">'accept'</span></span><br><span class="line">      type          : <span class="string">'(Ljava/lang/Object;)V'</span></span><br><span class="line">      access        : <span class="number">0x0011</span> (PUBLIC FINAL)</span><br><span class="line">      code          -</span><br><span class="line">      registers     : <span class="number">3</span></span><br><span class="line">      ins           : <span class="number">2</span></span><br><span class="line">      outs          : <span class="number">2</span></span><br><span class="line">      insns size    : <span class="number">6</span> <span class="number">16</span>-bit code units</span><br><span class="line"><span class="comment">// accept调用lambda$main$0方法的时候传入f$0和入参</span></span><br><span class="line"><span class="number">000290</span>:                                        |[<span class="number">000290</span>] -..Lambda.Test.i6YS_4McUAo2DfQmb_xpDZoX2iw.accept:(Ljava/lang/Object;)V</span><br><span class="line"><span class="number">0002</span>a0: <span class="number">5410</span> <span class="number">0000</span>                              |<span class="number">0000</span>: iget-object v0, v1, L-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw;.f$<span class="number">0</span>:Ljava/lang/String; <span class="comment">// field@0000</span></span><br><span class="line"><span class="number">0002</span>a4: <span class="number">7120</span> <span class="number">0400</span> <span class="number">2000</span>                         |<span class="number">0002</span>: invoke-<span class="keyword">static</span> &#123;v0, v2&#125;, LTest;.lambda$main$<span class="number">0</span>:(Ljava/lang/String;Ljava/lang/Object;)V <span class="comment">// method@0004</span></span><br><span class="line"><span class="number">0002</span>aa: <span class="number">0e00</span>                                   |<span class="number">0005</span>: <span class="keyword">return</span>-<span class="keyword">void</span></span><br><span class="line">      catches       : (none)</span><br><span class="line">      positions     :</span><br><span class="line">      locals        :</span><br><span class="line"></span><br><span class="line">  source_file_idx   : <span class="number">29</span> (lambda)</span><br></pre></td></tr></table></figure></p>
+<p>总体来看其实lambda在Android上的desugaring方式和匿名内部类很像，生成一个新类（以-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw为例），实现functional interface（Consumer）。然后生成一个static的lambda$$main$0方法，负责lambda具体逻辑。生成的新类重写接口的方法（accept），里面直接调lambda$$main$0方法。lambda的赋值和调用实际是对新类-$$Lambda$Test$i6YS_4McUAo2DfQmb_xpDZoX2iw的实例完成。</p>
+<p>至此desugaring大致原理就清楚了。</p>
+<hr>
+<p>参考：</p>
+<ul>
+<li><a href="https://jakewharton.com/androids-java-8-support/" target="_blank" rel="noopener">Android’s Java 8 Support</a></li>
+<li><a href="https://jakewharton.com/digging-into-d8-and-r8/" target="_blank" rel="noopener">Digging into D8 and R8</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/08/15/小程序跨进程那些事儿/" rel="next" title="小程序跨进程那些事儿">
+                <i class="fa fa-chevron-left"></i> 小程序跨进程那些事儿
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#invokedynamic-on-JVM"><span class="nav-number">2.</span> <span class="nav-text">invokedynamic on JVM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#D8-on-Android"><span class="nav-number">3.</span> <span class="nav-text">D8 on Android</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#desugaring"><span class="nav-number">3.1.</span> <span class="nav-text">desugaring</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/08/19/how-lambda-works/';
+          this.page.identifier = '2019/08/19/how-lambda-works/';
+          this.page.title = 'How Lambda Works';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
