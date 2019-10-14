@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Android,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="组里推行单测的一些经验和踩过的坑。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android单测实践经验">
+<meta property="og:url" content="https://bboylin.github.io/2019/10/15/Android单测经验/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="组里推行单测的一些经验和踩过的坑。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://bboylin.github.io/images/noverify.jpg">
+<meta property="og:updated_time" content="2019-10-14T16:38:57.724Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android单测实践经验">
+<meta name="twitter:description" content="组里推行单测的一些经验和踩过的坑。">
+<meta name="twitter:image" content="https://bboylin.github.io/images/noverify.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/10/15/Android单测经验/">
+
+
+
+
+
+  <title>Android单测实践经验 | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/10/15/Android单测经验/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android单测实践经验</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-10-15T00:08:14+08:00">
+                2019-10-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/10/15/Android单测经验/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/10/15/Android单测经验/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>组里推行单测的一些经验和踩过的坑。<a id="more"></a></p>
+<h3 id="单测的好处"><a href="#单测的好处" class="headerlink" title="单测的好处"></a>单测的好处</h3><ul>
+<li>可以覆盖QA所测不到的点，比如工具类/基类的健壮性</li>
+<li>研发对自己写的代码更熟悉，更容易测出bug，TDD。</li>
+<li>便于代码重构，重构后跑一遍单测，保证重构后功能正常。（对单测的健壮性要求较高，实际执行中往往代码重构后单测也需要修改，只不过单测写得好的可以尽量少的改动）。代码后期修改维护也是一样的道理。</li>
+</ul>
+<h3 id="Android单测"><a href="#Android单测" class="headerlink" title="Android单测"></a>Android单测</h3><p>Android单测分两种，一种是纯Java逻辑的测试，运行于JVM之上，不具备Android依赖，对应Android中test包；另一种是Instrumentation test，执行于Android device，但是执行速度慢，内存占用多。业内普遍采用的单测是前者，虽然运行在JVM上，但是可以通过<a href="http://robolectric.org/" target="_blank" rel="noopener">robolectric</a> mock Android Runtime，从而发挥其运行快，占内存少的优点。<a href="http://robolectric.org/" target="_blank" rel="noopener">robolectric</a>采用<code>Shadow</code>机制偷天换日，将Android Runtime的类替换成了自己实现的对应的Shadow类，从而解决Native代码无法执行 和 JVM没有Android system process等问题。 由于JVM与真实执行环境毕竟有差异，比如网络请求，文件IO等操作往往需要mock。常用的mock库是<a href="https://github.com/powermock/powermock/wiki/Getting-Started" target="_blank" rel="noopener">powermock</a>, 和 <a href="http://robolectric.org/" target="_blank" rel="noopener">robolectric</a>一样，<a href="https://github.com/powermock/powermock/wiki/Getting-Started" target="_blank" rel="noopener">powermock</a>也利用了字节码修改技术，它可用来mock实例，方法，字段等等。Junit是单测的基础框架，单测执行和验证结果都依赖Junit。</p>
+<h3 id="单测的编写原则"><a href="#单测的编写原则" class="headerlink" title="单测的编写原则"></a>单测的编写原则</h3><ul>
+<li>哪些代码需要写单测？不同业务范畴不同，但是可从几个地方评估：一个是重要性，需要保证健壮性的核心模块更需要写单测，例如启动流程，例如使用频率高的工具类；另一个是复杂度，复杂度越高的模块出错概率越大，也更应该写单测，复杂度主要看逻辑，例如条件分支多不多以及依赖的其他类多不多。</li>
+<li>测试粒度：单个方法。测试用例中不应该包含switch if等分支语句，有的话拆到多个测试用例中。</li>
+<li>测试case尽量不要try catch， try catch会掩盖异常，可能使结果不对。</li>
+<li>尽量少mock。越少mock越接近真实环境，代码修改或者重构的时候单测的修改也会少很多。</li>
+<li>条件覆盖 &gt; 行覆盖，不要过于追求行覆盖率，本末倒置。</li>
+<li>写代码的研发写对应的单测，最熟悉逻辑的人最清楚哪里可能出错。</li>
+<li>测试case命名包含<code>所测方法</code>+<code>输入</code>+<code>期望输出</code></li>
+</ul>
+<h3 id="覆盖率"><a href="#覆盖率" class="headerlink" title="覆盖率"></a>覆盖率</h3><p>覆盖率可通过Android Studio自带的工具查看，在单测模块下某个包或者类右键会出现run test with coverage ，即可查看覆盖率。也可通过gradle命令查看。两种本质都是通过jacoco来实现的。后者步骤如下：</p>
+<ul>
+<li><p>【Step1】: 新建jacoco.gradle文件(build.gralde同级)</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'jacoco'</span></span><br><span class="line">configurations &#123;</span><br><span class="line">    jacocoAnt</span><br><span class="line">    jacocoRuntime</span><br><span class="line">&#125;</span><br><span class="line">jacoco &#123;</span><br><span class="line">    toolVersion = <span class="string">"0.8.1"</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">def</span> coverageSourceDirs = [</span><br><span class="line">    <span class="string">'src/main/java'</span></span><br><span class="line">]</span><br><span class="line">task jacocoTestReport(<span class="string">type:</span> JacocoReport) &#123;</span><br><span class="line">    group = <span class="string">"Reporting"</span></span><br><span class="line">    description = <span class="string">"Generate Jacoco coverage reports"</span></span><br><span class="line">    classDirectories = fileTree(</span><br><span class="line"><span class="symbol">            dir:</span> <span class="string">'build/intermediates/classes/debug'</span>,</span><br><span class="line"><span class="symbol">            excludes:</span> [<span class="string">'**/R.class'</span>,</span><br><span class="line">                       <span class="string">'**/R$*.class'</span>,</span><br><span class="line">                       <span class="string">'**/BuildConfig.*'</span>,</span><br><span class="line">                       <span class="string">'**/MainActivity.*'</span>]</span><br><span class="line">    )</span><br><span class="line">    sourceDirectories = files(coverageSourceDirs)</span><br><span class="line">    executionData = files(<span class="string">'build/jacoco/testDebugUnitTest.exec'</span>)</span><br><span class="line">&#125;</span><br><span class="line">jacocoTestReport &#123;</span><br><span class="line">    reports &#123;</span><br><span class="line">        xml.enabled  <span class="literal">true</span></span><br><span class="line">        html.enabled  <span class="literal">true</span></span><br><span class="line">        html.destination file(<span class="string">"build/test-results/jacocoHtml"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">def</span> offline_instrumented_outputDir = <span class="string">"$buildDir.path/intermediates/classes-instrumented/debug"</span></span><br><span class="line">tasks.withType(Test) &#123;</span><br><span class="line">    jacoco.includeNoLocationClasses = <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line">task createOfflineTestCoverageReport(<span class="string">dependsOn:</span> [<span class="string">'instrument'</span>, <span class="string">'testDebugUnitTest'</span>]) &#123;</span><br><span class="line">    doLast &#123;</span><br><span class="line">        ant.taskdef(<span class="string">name:</span> <span class="string">'report'</span>,</span><br><span class="line"><span class="symbol">                classname:</span> <span class="string">'org.jacoco.ant.ReportTask'</span>,</span><br><span class="line"><span class="symbol">                classpath:</span> configurations.jacocoAnt.asPath)</span><br><span class="line">        ant.report() &#123;</span><br><span class="line">            executiondata &#123;</span><br><span class="line">                ant.file(<span class="string">file:</span> <span class="string">"$buildDir.path/jacoco/testDebugUnitTest.exec"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">            structure(<span class="string">name:</span> <span class="string">'Example'</span>) &#123;</span><br><span class="line">                classfiles &#123;</span><br><span class="line">                    fileset(<span class="string">dir:</span> <span class="string">"$project.buildDir/intermediates/classes/debug"</span>)</span><br><span class="line">                &#125;</span><br><span class="line">                sourcefiles &#123;</span><br><span class="line">                    fileset(<span class="string">dir:</span> <span class="string">'src/main/java'</span>)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">jacocoTestReport.mustRunAfter createOfflineTestCoverageReport</span><br><span class="line">gradle.taskGraph.whenReady &#123; graph -&gt;</span><br><span class="line">    <span class="keyword">if</span> (graph.hasTask(instrument)) &#123;</span><br><span class="line">        tasks.withType(Test) &#123;</span><br><span class="line">            doFirst &#123;</span><br><span class="line">                systemProperty <span class="string">'jacoco-agent.destfile'</span>, buildDir.path + <span class="string">'/jacoco/testDebugUnitTest.exec'</span></span><br><span class="line">                classpath = files(offline_instrumented_outputDir) + classpath + configurations.jacocoRuntime</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">task instrument(<span class="string">dependsOn:</span><span class="string">'compileDebugUnitTestSources'</span>) &#123;</span><br><span class="line">    doLast &#123;</span><br><span class="line">        println <span class="string">'Instrumenting classes'</span></span><br><span class="line">        ant.taskdef(<span class="string">name:</span> <span class="string">'instrument'</span>,</span><br><span class="line"><span class="symbol">                classname:</span> <span class="string">'org.jacoco.ant.InstrumentTask'</span>,</span><br><span class="line"><span class="symbol">                classpath:</span> configurations.jacocoAnt.asPath)</span><br><span class="line">        ant.instrument(<span class="string">destdir:</span> offline_instrumented_outputDir) &#123;</span><br><span class="line">            fileset(<span class="string">dir:</span> <span class="string">"$buildDir.path/intermediates/classes/debug"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>【Step2】: build.gradle中开启jacoco相关</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    buildTypes &#123;</span><br><span class="line">        debug &#123;</span><br><span class="line">            <span class="keyword">if</span> (useJacoco) &#123;</span><br><span class="line">                testCoverageEnabled = <span class="literal">true</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (useJacoco) &#123;</span><br><span class="line">    apply <span class="string">from:</span> <span class="string">'jacoco.gradle'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>【Step3】: 运行并生成报告</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./gradlew clean -PuseJacoco=<span class="literal">true</span> -PunitTest=<span class="literal">true</span> :lib-xxx:createOfflineTestCoverageReport jacocoTestReport</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="实践中踩的坑"><a href="#实践中踩的坑" class="headerlink" title="实践中踩的坑"></a>实践中踩的坑</h3><h4 id="首次运行Robolectric需要从官网下载其依赖的android-all-jar"><a href="#首次运行Robolectric需要从官网下载其依赖的android-all-jar" class="headerlink" title="首次运行Robolectric需要从官网下载其依赖的android-all.jar"></a>首次运行Robolectric需要从官网下载其依赖的android-all.jar</h4><p>建议自建maven，从官网下慢，从其他镜像下的可能不完整。</p>
+<h4 id="运行前置环境"><a href="#运行前置环境" class="headerlink" title="运行前置环境"></a>运行前置环境</h4><p>Android Studio里<code>edit configrations</code>配置Junit的<code>VM options</code>里加上<code>-noverify</code>参数。</p>
+<p><img src="/images/noverify.jpg" alt></p>
+<p>JDK 1.7开始增加并校验class文件中的stack map frame信息，如果依赖的<a href="https://github.com/powermock/powermock/wiki/Getting-Started" target="_blank" rel="noopener">powermock</a>或者<a href="http://robolectric.org/" target="_blank" rel="noopener">robolectric</a>版本过低可能出现：<code>java.lang.VerifyError: Expecting a stackmap frame at branch target.....</code>，因为低版本的<a href="https://github.com/powermock/powermock/wiki/Getting-Started" target="_blank" rel="noopener">powermock</a>或者<a href="http://robolectric.org/" target="_blank" rel="noopener">robolectric</a>进行字节码修改的时候可能针对的是Java 6 class格式进行的，导致没有valid stack map frame。</p>
+<h4 id="mock相关"><a href="#mock相关" class="headerlink" title="mock相关"></a>mock相关</h4><ul>
+<li>final/static方法的mock需要把所属类加入prepareForTest列表中，建议加在类上，不要加在方法上。</li>
+<li>利用Powermock的<code>whenNew</code>方法 mock实例的创建的时候需要把创建实例的类加到prepareForTest列表中，不然不生效但是也不报错。。。</li>
+</ul>
+<h4 id="如何测试void方法"><a href="#如何测试void方法" class="headerlink" title="如何测试void方法"></a>如何测试void方法</h4><p>和有返回值的方法相比，void方法是没有输出的。针对这类方法的测试也就没有万金油。一般有几种测试思路：</p>
+<ul>
+<li>如果我们想要的输出在执行完void方法后存在了某个field里，取出这个field的值直接验证即可</li>
+<li>如果我们想要的输出在执行void方法流程中作为参数传入了某个方法，通过继承等方式hook这个方法，得到我们想要的输出进行验证。</li>
+<li>如果所测方法无法真实执行，就只能通过Powermock的verifyXx方法验证是否被调用，以及调用次数。</li>
+</ul>
+<h4 id="多线程assert"><a href="#多线程assert" class="headerlink" title="多线程assert"></a>多线程assert</h4><p>现实代码中多线程很常见, 但是这些代码的单测经常遇到坑。首先是Junit在执行完main test thread的代码后会立即shutdown，同时造成其他线程不管有没有执行完都会立即退出。要是其他线程中有assert语句的话很可能没执行到，导致你误以为测试通过了。那么怎么办呢？主线程hang住 等其他线程执行完再退出不就行了吗？</p>
+<p>但是事情往往没这么简单。以下面这段简单的代码为例：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * just a example</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">example</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> CountDownLatch latch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">new</span> Thread(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            Assert.assertEquals(<span class="number">123</span>, <span class="number">1234</span>);</span><br><span class="line">            latch.countDown();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">    latch.await();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们在主线程用<code>CountDownLatch</code>的<code>await</code>方法hang住，在其他线程执行完测试代码后使用Assert验证结果是否正确，验证完成调用<code>countDown</code>方法让主线程继续。乍一看逻辑没问题，但是一旦Assert验证结果不对抛出<code>AssertionError</code>的时候，<code>countDown()</code>执行不到，主线程会一直hang住。而且由于Junit会ignore 非主线程抛出的<code>AssertionError</code>，在控制台的输出你根本看不到<code>AssertionError</code>的发生。这给很多第一次遇到这种问题的开发者造成了不少麻烦。怎么解决呢？</p>
+<ul>
+<li>方法一：catch住其他线程的<code>AssertionError</code>，然后扔给主线程，主线程恢复执行后发现存在其他线程的<code>AssertionError</code>就抛出。</li>
+<li>方法二：采用mock的方法把多线程执行的方法扔到主线程执行，连同步代码都省了。</li>
+</ul>
+<p>这两种方法各有利弊，对于大多数场景来说，多线程执行的方法扔到主线程执行也没问题，采用方法二非常简单，对写单测的人来说几乎毫无感知。对于一些要求必须在某些线程执行的代码，就只能采用方法一来解决了，写起来会麻烦一点，但是可以更好满足多线程的要求。</p>
+<p>对于方法一，我封装了一个工具类，见<a href="https://github.com/bboylin/MyNotebook/blob/master/part1/Waiter.java" target="_blank" rel="noopener">Waiter.java</a></p>
+<hr>
+<p>后记：</p>
+<p>虽然单测有一定的好处，但是并不能取代人工/自动化测试，同时单测会增加研发的开发成本，所以需要正确看待单测，不生搬硬套，不过度追求覆盖率，落到实处，以保障质量为准。熟练之后写单测的时间占写代码的时间比重最好不要过大，否则可能拖慢研发效率。以上。欢迎评论。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/08/19/how-lambda-works/" rel="next" title="How Lambda Works">
+                <i class="fa fa-chevron-left"></i> How Lambda Works
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#单测的好处"><span class="nav-number">1.</span> <span class="nav-text">单测的好处</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Android单测"><span class="nav-number">2.</span> <span class="nav-text">Android单测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#单测的编写原则"><span class="nav-number">3.</span> <span class="nav-text">单测的编写原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#覆盖率"><span class="nav-number">4.</span> <span class="nav-text">覆盖率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实践中踩的坑"><span class="nav-number">5.</span> <span class="nav-text">实践中踩的坑</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#首次运行Robolectric需要从官网下载其依赖的android-all-jar"><span class="nav-number">5.1.</span> <span class="nav-text">首次运行Robolectric需要从官网下载其依赖的android-all.jar</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#运行前置环境"><span class="nav-number">5.2.</span> <span class="nav-text">运行前置环境</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mock相关"><span class="nav-number">5.3.</span> <span class="nav-text">mock相关</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何测试void方法"><span class="nav-number">5.4.</span> <span class="nav-text">如何测试void方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多线程assert"><span class="nav-number">5.5.</span> <span class="nav-text">多线程assert</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/10/15/Android单测经验/';
+          this.page.identifier = '2019/10/15/Android单测经验/';
+          this.page.title = 'Android单测实践经验';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
