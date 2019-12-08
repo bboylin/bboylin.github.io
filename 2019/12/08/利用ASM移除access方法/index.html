@@ -78,7 +78,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
 
 
-  <meta name="keywords" content="Java,">
+  <meta name="keywords" content="Android,">
 
 
 
@@ -94,18 +94,18 @@
 
 
 
-<meta name="description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
-<meta name="keywords" content="Java">
+<meta name="description" content="repo: https://github.com/bboylin/Synth 简介写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，">
+<meta name="keywords" content="Android">
 <meta property="og:type" content="article">
-<meta property="og:title" content="慎用继承">
-<meta property="og:url" content="https://bboylin.github.io/2019/06/25/慎用继承/index.html">
+<meta property="og:title" content="利用ASM移除access方法">
+<meta property="og:url" content="https://bboylin.github.io/2019/12/08/利用ASM移除access方法/index.html">
 <meta property="og:site_name" content="24号程序猿">
-<meta property="og:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
+<meta property="og:description" content="repo: https://github.com/bboylin/Synth 简介写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-06-29T13:59:18.918Z">
+<meta property="og:updated_time" content="2019-12-08T02:43:01.081Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="慎用继承">
-<meta name="twitter:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
+<meta name="twitter:title" content="利用ASM移除access方法">
+<meta name="twitter:description" content="repo: https://github.com/bboylin/Synth 简介写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，">
 
 
 
@@ -134,13 +134,13 @@
 
 
 
-  <link rel="canonical" href="https://bboylin.github.io/2019/06/25/慎用继承/">
+  <link rel="canonical" href="https://bboylin.github.io/2019/12/08/利用ASM移除access方法/">
 
 
 
 
 
-  <title>慎用继承 | 24号程序猿</title>
+  <title>利用ASM移除access方法 | 24号程序猿</title>
   
 
 
@@ -273,7 +273,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/06/25/慎用继承/">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/12/08/利用ASM移除access方法/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="bboylin">
@@ -290,7 +290,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">慎用继承</h1>
+          <h1 class="post-title" itemprop="name headline">利用ASM移除access方法</h1>
         
 
         <div class="post-meta">
@@ -302,8 +302,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-06-25T23:19:32+08:00">
-                2019-06-25
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-08T10:35:38+08:00">
+                2019-12-08
               </time>
             
 
@@ -325,8 +325,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index">
-                    <span itemprop="name">Java</span>
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
                   </a>
                 </span>
 
@@ -343,8 +343,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2019/06/25/慎用继承/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/06/25/慎用继承/" itemprop="commentCount"></span>
+                <a href="/2019/12/08/利用ASM移除access方法/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/12/08/利用ASM移除access方法/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -372,17 +372,29 @@
       
 
       
-        <p>之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：<strong><em>除了使用final，abstract修饰的类外，所有类必须打上@Open注解。</em></strong> 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那么为什么呢？</p>
-<a id="more"></a>
-<h3 id="继承打破了封装性"><a href="#继承打破了封装性" class="headerlink" title="继承打破了封装性"></a>继承打破了封装性</h3><p>类A继承类B，B中一些方法的实现可能随不同版本变化而变化，有些变化可能会打破A的鲁棒性。例如我们想继承HashSet实现一个能统计历史加过多少个元素的hashSet，我们可能会重写其addAll和add方法，add的时候计数+1，同时调用父类HashSet的add方法，<code>addAll（Collection&lt;? extends E&gt; c）</code>的时候计数加上<code>c.size()</code>，同时调用父类HashSet的addAll方法。乍一看没什么问题。但是HashSet的addAll方法是通过add方法实现的，这就会导致调用add的时候计数正确，调用addAll的时候计数增加的不是<code>c.size()</code>而是两倍的<code>c.size()</code>。如果我们不了解addAll的实现细节，我们不容易注意到这个问题。那你可能会说那我不覆写addAll方法不就能work了吗？确实是，但是work的前提是HashSet的addAll方法一直通过add来实现。而这种实现细节没人能承诺一成不变。一旦子类的鲁棒性依赖于父类方法的实现细节这个继承关系就不太可靠，也不利于维护。而理想的封装正在于让调用方不需要关心方法实现的细节，只需要关注方法的结果。所以说这打破了封装性。实际上这种情况组合优于继承。利用包装类持有HashSet的对象来实现HashSet对应功能，同时包装类中维护一个计数，这样就不依赖于HashSet的实现细节来。一定是在两个类之间具备强烈的”is-a”关系的时候才去使用继承，Java中stack继承自vector，也是一种继承滥用。只有确认每个B都是A，才应该让B继承自A。否则考虑组合是不是更好？</p>
-<h3 id="要么不继承，要么就好好设计并提供文档说明"><a href="#要么不继承，要么就好好设计并提供文档说明" class="headerlink" title="要么不继承，要么就好好设计并提供文档说明"></a>要么不继承，要么就好好设计并提供文档说明</h3><ul>
-<li><strong><em>被继承的类应该有文档说明其overridable方法的自用性（即调用了哪些可被覆写的方法）</em></strong> 虽然说好的API文档应该描述这个方法做了什么，而不用关心它具体怎么做到的。但是因为继承打破了封装性，所以我们实现继承的时候必须把overridable方法的自用性描述清楚。否则可能就是在挖坑。</li>
-<li><strong><em>被设计继承的类必须提供适当的hook来让设计的protected方法进入内部工作流程</em></strong> 这条无需赘述，都看得懂。</li>
-<li><strong><em>父类的constructor不能调用可被覆写的方法</em></strong> 原因很简单，父类constructor先于子类constructor执行，一旦调用可覆写的方法，子类中的变量实例很可能还没初始化，造成程序异常。同理 <strong><em>clone和readObject都不能调用可被覆写的方法</em></strong> 因为覆写的方法调用时间在反序列化和clone完成之前。</li>
-<li>尽量用接口代替抽象类。</li>
+        <p>repo: <a href="https://github.com/bboylin/Synth" target="_blank" rel="noopener">https://github.com/bboylin/Synth</a></p>
+<h4 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h4><p>写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，之所以外部类能访问内部类的私有变量，是因为Java生成了个package访问级别的access方法，同时修改了指令，把所有对内部类私有变量的访问变成了对access方法的调用，读写都是如此。反之亦然，内部类访问外部类的私有成员变量/私有static变量/私有方法/私有static方法都是通过access方法实现的。<a id="more"></a></p>
+<p>如果还不理解的可以看看jake wharton的这个presentation：<a href="https://jakewharton.com/exploring-java-hidden-costs/" target="_blank" rel="noopener">Exploring Java Hidden Costs</a></p>
+<p>synth通过ASM在编译期间移除了access方法， 同时将被外部类或者内部类访问的私有变量/私有static变量/私有方法/私有static方法都变成package级别的访问权限，将所有对access方法的调用转为直接对变量或者方法的调用。</p>
+<p>简而言之 就是内联了access方法的调用。 这样做有什么好处呢？</p>
+<ul>
+<li>减少了方法数，有利于缓解安卓上存在的65535方法数限制，同时能减少包体积</li>
+<li>少了一层方法调用，指令更紧凑，执行效率更高。（当然，现代机器上这点已经可以忽略了）</li>
 </ul>
+<p>Facebook开源的Android编译工具 <a href="https://github.com/facebook/redex" target="_blank" rel="noopener">redex</a> 中已经做了一样的事情，不同的是其实现是基于对dex字节码的操作：<a href="https://github.com/facebook/redex/blob/26c54aa0e9e8ac063d721f7b70ab11fd2298d6a9/opt/synth/Synth.cpp" target="_blank" rel="noopener">https://github.com/facebook/redex/blob/26c54aa0e9e8ac063d721f7b70ab11fd2298d6a9/opt/synth/Synth.cpp</a>, 而且gradle项目必须改用redex编译才能使用这个feature。那么在不从gradle迁移到redex的前提下，这个feature是无法使用的。</p>
+<p>字节跳动西瓜技术团队也做了这样的事情，利用ASM在编译期内联access方法，作为一个独立的gradle插件。详见：<a href="https://mp.weixin.qq.com/s/ZHisCVjO_ZrtvvEWBYUQFQ" target="_blank" rel="noopener">西瓜视频apk瘦身之 Java access 方法删除</a></p>
+<p>不过他们没有开源。我按照头条的思路实现了一下。</p>
+<p>实现细节：</p>
+<ul>
+<li>为什么使用ASM的Tree API而不是很多人用的core API？Tree API官方文档说耗时大概是core API的1.3倍。但是考虑到这种业务场景下core API需要两次 class parse的遍历，一次收集access方法和类/字段信息，另一次执行bytecode manipulation，而Tree API只需要一次，显然更快而且更优雅。</li>
+<li>是不是简单的把access方法里的指令照搬到调用处替换下就能实现内联？大体可以这么考虑 但是细节问题还是不少，不如同样的aload_0指令 在两个方法里的含义是不一样的，因为不同类里局部变量表里第一个成员不同。另外方法的access从private变成package级别后，调用指令也变了，原先invokespecial调用这个方法的地方都得改成invokevirtual，还有指令增加带来的操作数栈的扩展等等。</li>
+<li>如何尽可能控制这个工具自身的风险？ASM提供了<code>CheckClassAdapter</code>用于对字节码编译的校验，尽可能将问题暴露在编译期，从而不带入线上。如果遇到编译出错，可以将具体报错贴出来issue我。同时如果想引用这个工具，最好充分测试app功能的正确性再上线。</li>
+</ul>
+<h4 id="如何引用："><a href="#如何引用：" class="headerlink" title="如何引用："></a>如何引用：</h4><h5 id="1-在project的build-gradle添加"><a href="#1-在project的build-gradle添加" class="headerlink" title="1. 在project的build.gradle添加"></a>1. 在project的build.gradle添加</h5><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath <span class="string">'xyz.bboylin:synth:0.0.1'</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="2-在app的build-gradle中添加"><a href="#2-在app的build-gradle中添加" class="headerlink" title="2. 在app的build.gradle中添加"></a>2. 在app的build.gradle中添加</h5><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'xyz.bboylin.synth'</span></span><br></pre></td></tr></table></figure>
 <hr>
-<p>总结来说就是，因为Java语言默认类可继承，一定程度上会加剧在工程中随意继承的现象，而随意继承会不经意间给后面维护埋下坑。并不说不要继承，而是一旦继承就好好设计并写好注释或者文档。</p>
+<p>any questions contact me : <a href="mailto:bboylin24@gmail.com" target="_blank" rel="noopener">bboylin24@gmail.com</a></p>
+<p>welcome for issues and pull requests</p>
 
       
     </div>
@@ -400,7 +412,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java/" rel="tag"># Java</a>
+            <a href="/tags/Android/" rel="tag"># Android</a>
           
         </div>
       
@@ -413,8 +425,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/04/11/RxJava2源码分析/" rel="next" title="RxJava2源码分析">
-                <i class="fa fa-chevron-left"></i> RxJava2源码分析
+              <a href="/2019/10/15/Android单测经验/" rel="next" title="Android单测实践经验">
+                <i class="fa fa-chevron-left"></i> Android单测实践经验
               </a>
             
           </div>
@@ -422,10 +434,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/06/29/2019年5月泰国行/" rel="prev" title="2019/05泰国行">
-                2019/05泰国行 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -624,7 +632,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#继承打破了封装性"><span class="nav-number">1.</span> <span class="nav-text">继承打破了封装性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#要么不继承，要么就好好设计并提供文档说明"><span class="nav-number">2.</span> <span class="nav-text">要么不继承，要么就好好设计并提供文档说明</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何引用："><span class="nav-number">2.</span> <span class="nav-text">如何引用：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-在project的build-gradle添加"><span class="nav-number">2.1.</span> <span class="nav-text">1. 在project的build.gradle添加</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-在app的build-gradle中添加"><span class="nav-number">2.2.</span> <span class="nav-text">2. 在app的build.gradle中添加</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -774,9 +782,9 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://bboylin.github.io/2019/06/25/慎用继承/';
-          this.page.identifier = '2019/06/25/慎用继承/';
-          this.page.title = '慎用继承';
+          this.page.url = 'https://bboylin.github.io/2019/12/08/利用ASM移除access方法/';
+          this.page.identifier = '2019/12/08/利用ASM移除access方法/';
+          this.page.title = '利用ASM移除access方法';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://bboylin.disqus.com/embed.js';
