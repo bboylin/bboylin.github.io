@@ -78,7 +78,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
 
 
-  <meta name="keywords" content="Java,">
+  <meta name="keywords" content="Android,">
 
 
 
@@ -94,18 +94,18 @@
 
 
 
-<meta name="description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
-<meta name="keywords" content="Java">
+<meta name="description" content="kotlin里的flow API，和RxJava神似，大体一样的操作符和线程（flow里是协程）调度，链式API ， 都是cold stream, 等等，flow可以作为kotlin中RxJava的替代，而且可能做得更好。">
+<meta name="keywords" content="Android">
 <meta property="og:type" content="article">
-<meta property="og:title" content="慎用继承">
-<meta property="og:url" content="https://bboylin.github.io/2019/06/25/慎用继承/index.html">
+<meta property="og:title" content="RxJava is no more essential">
+<meta property="og:url" content="https://bboylin.github.io/2019/12/16/CoroutineFlow/index.html">
 <meta property="og:site_name" content="24号程序猿">
-<meta property="og:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
+<meta property="og:description" content="kotlin里的flow API，和RxJava神似，大体一样的操作符和线程（flow里是协程）调度，链式API ， 都是cold stream, 等等，flow可以作为kotlin中RxJava的替代，而且可能做得更好。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-06-29T13:59:18.918Z">
+<meta property="og:updated_time" content="2019-12-17T17:22:43.111Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="慎用继承">
-<meta name="twitter:description" content="之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：除了使用final，abstract修饰的类外，所有类必须打上@Open注解。 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那">
+<meta name="twitter:title" content="RxJava is no more essential">
+<meta name="twitter:description" content="kotlin里的flow API，和RxJava神似，大体一样的操作符和线程（flow里是协程）调度，链式API ， 都是cold stream, 等等，flow可以作为kotlin中RxJava的替代，而且可能做得更好。">
 
 
 
@@ -134,13 +134,13 @@
 
 
 
-  <link rel="canonical" href="https://bboylin.github.io/2019/06/25/慎用继承/">
+  <link rel="canonical" href="https://bboylin.github.io/2019/12/16/CoroutineFlow/">
 
 
 
 
 
-  <title>慎用继承 | 24号程序猿</title>
+  <title>RxJava is no more essential | 24号程序猿</title>
   
 
 
@@ -273,7 +273,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/06/25/慎用继承/">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/12/16/CoroutineFlow/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="bboylin">
@@ -290,7 +290,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">慎用继承</h1>
+          <h1 class="post-title" itemprop="name headline">RxJava is no more essential</h1>
         
 
         <div class="post-meta">
@@ -302,8 +302,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-06-25T23:19:32+08:00">
-                2019-06-25
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-16T23:41:03+08:00">
+                2019-12-16
               </time>
             
 
@@ -325,8 +325,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index">
-                    <span itemprop="name">Java</span>
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
                   </a>
                 </span>
 
@@ -343,8 +343,8 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2019/06/25/慎用继承/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/06/25/慎用继承/" itemprop="commentCount"></span>
+                <a href="/2019/12/16/CoroutineFlow/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/12/16/CoroutineFlow/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -372,17 +372,32 @@
       
 
       
-        <p>之前看到Jake Wharton利用error prone搞了个java代码编译时检查工具，规则如下：<strong><em>除了使用final，abstract修饰的类外，所有类必须打上@Open注解。</em></strong> 言外之意不是专门被设计用来继承的类尽量用final修饰。无独有偶，kotlin中类默认是final的，想被继承需要手动加上open关键字。这都说明：这些大佬不希望类是默认可被继承的，也就是撸码过程中继承关系需要慎用。那么为什么呢？</p>
-<a id="more"></a>
-<h3 id="继承打破了封装性"><a href="#继承打破了封装性" class="headerlink" title="继承打破了封装性"></a>继承打破了封装性</h3><p>类A继承类B，B中一些方法的实现可能随不同版本变化而变化，有些变化可能会打破A的鲁棒性。例如我们想继承HashSet实现一个能统计历史加过多少个元素的hashSet，我们可能会重写其addAll和add方法，add的时候计数+1，同时调用父类HashSet的add方法，<code>addAll（Collection&lt;? extends E&gt; c）</code>的时候计数加上<code>c.size()</code>，同时调用父类HashSet的addAll方法。乍一看没什么问题。但是HashSet的addAll方法是通过add方法实现的，这就会导致调用add的时候计数正确，调用addAll的时候计数增加的不是<code>c.size()</code>而是两倍的<code>c.size()</code>。如果我们不了解addAll的实现细节，我们不容易注意到这个问题。那你可能会说那我不覆写addAll方法不就能work了吗？确实是，但是work的前提是HashSet的addAll方法一直通过add来实现。而这种实现细节没人能承诺一成不变。一旦子类的鲁棒性依赖于父类方法的实现细节这个继承关系就不太可靠，也不利于维护。而理想的封装正在于让调用方不需要关心方法实现的细节，只需要关注方法的结果。所以说这打破了封装性。实际上这种情况组合优于继承。利用包装类持有HashSet的对象来实现HashSet对应功能，同时包装类中维护一个计数，这样就不依赖于HashSet的实现细节来。一定是在两个类之间具备强烈的”is-a”关系的时候才去使用继承，Java中stack继承自vector，也是一种继承滥用。只有确认每个B都是A，才应该让B继承自A。否则考虑组合是不是更好？</p>
-<h3 id="要么不继承，要么就好好设计并提供文档说明"><a href="#要么不继承，要么就好好设计并提供文档说明" class="headerlink" title="要么不继承，要么就好好设计并提供文档说明"></a>要么不继承，要么就好好设计并提供文档说明</h3><ul>
-<li><strong><em>被继承的类应该有文档说明其overridable方法的自用性（即调用了哪些可被覆写的方法）</em></strong> 虽然说好的API文档应该描述这个方法做了什么，而不用关心它具体怎么做到的。但是因为继承打破了封装性，所以我们实现继承的时候必须把overridable方法的自用性描述清楚。否则可能就是在挖坑。</li>
-<li><strong><em>被设计继承的类必须提供适当的hook来让设计的protected方法进入内部工作流程</em></strong> 这条无需赘述，都看得懂。</li>
-<li><strong><em>父类的constructor不能调用可被覆写的方法</em></strong> 原因很简单，父类constructor先于子类constructor执行，一旦调用可覆写的方法，子类中的变量实例很可能还没初始化，造成程序异常。同理 <strong><em>clone和readObject都不能调用可被覆写的方法</em></strong> 因为覆写的方法调用时间在反序列化和clone完成之前。</li>
-<li>尽量用接口代替抽象类。</li>
+        <p>kotlin里的flow API，和RxJava神似，大体一样的操作符和线程（flow里是协程）调度，链式API ， 都是cold stream, 等等，flow可以作为kotlin中RxJava的替代，而且可能做得更好。<a id="more"></a></p>
+<h3 id="Flow-in-Kotlin"><a href="#Flow-in-Kotlin" class="headerlink" title="Flow in Kotlin"></a>Flow in Kotlin</h3><p><a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-flow/" target="_blank" rel="noopener">Flow</a>是cold stream ，和reactive stream一样，它有 map, filter, take, zip等中间操作符（Intermediate operators），也有 collect, single, reduce, toList等终止操作符（Terminal operators）。flow上游调的中间操作符操作符内所做的transform只有在调到终止操作符之后才会真正开始执行，所以称作cold stream。</p>
+<h4 id="Flow-builders"><a href="#Flow-builders" class="headerlink" title="Flow builders"></a>Flow builders</h4><p>flow builder主要有一下几个：</p>
+<ul>
+<li>flowOf(…) functions to create a flow from a fixed set of values.</li>
+<li>asFlow() extension functions on various types to convert them into flows.</li>
+<li>flow { … } builder function to construct arbitrary flows from sequential calls to emit function.</li>
+<li>channelFlow { … } builder function to construct arbitrary flows from potentially concurrent calls to the send function.</li>
 </ul>
+<h4 id="Flow-transform"><a href="#Flow-transform" class="headerlink" title="Flow transform"></a>Flow transform</h4><p>flow的操作符见<a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-flow/" target="_blank" rel="noopener">官方文档</a>，和reactive stream的操作符大同小异，不一一赘述。flow的transform可以执行suspend函数，这个是和sequence的一个区别。flow中的transform接受的函数都是suspend的，包括collect在内，所以flow数据的发射是串行的，只有上一个数据被消费后下一个数据才会发射。这也就是为什么flow天然支持backpressure。RxJava不一样，RxJava处理backpressure的策略有buffer/drop/latest，处理backpressure让这些操作符内部实现变得更复杂。我们可使用buffer操作符让上游在下游消费的时候继续发射数据而不是等待。（conflate操作符相当于大小为1的buffer操作，并且只保存latest元素。combine和zip操作符都可以讲两个flow合并成一个，但是combine的话其中任意一个flow产生新值的时候都会和另一个flow最近的值一起重新计算，发射一个新数据。）</p>
+<p>当flow执行到可被取消的suspend函数的时候可以被cancel，这也是Rxjava不具备的。</p>
+<p>Reactive Stream在多个编程语言上都有实现，自然有一套统一的规范，用其中自带的操作符不太可能出问题，但是如果我们自己想实现一个操作符呢？这就不太友好了。flow的话想自己实现一个操作符就简单多了，不用考虑backpressure，不用大量的代码，举个例子：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Flow<span class="type">&lt;T&gt;</span>.<span class="title">delayASecond</span><span class="params">()</span></span> = flow &#123;</span><br><span class="line">    collect &#123; value -&gt; <span class="comment">// collect from the original flow</span></span><br><span class="line">        delay(<span class="number">1000</span>)    <span class="comment">// delay 1 second</span></span><br><span class="line">        emit(value)    <span class="comment">// emit value to the resulting flow</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>flow上没有onComplete和onEror callback 但是从上面也可以看出，其实我们自定义操作符也可以实现这俩的功能了，例如：</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Flow<span class="type">&lt;T&gt;</span>.<span class="title">onCompleted</span><span class="params">(action: ()</span></span> -&gt; <span class="built_in">Unit</span>) = flow &#123;</span><br><span class="line">    <span class="comment">// reemit all values from the original flow</span></span><br><span class="line">    collect &#123; value -&gt; emit(value) &#125;</span><br><span class="line">    <span class="comment">// this code runs only after the normal completion</span></span><br><span class="line">    action()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>官方的实现见：<a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/on-completion.html" target="_blank" rel="noopener">onCompletion</a></p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@ExperimentalCoroutinesApi</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Flow<span class="type">&lt;T&gt;</span>.<span class="title">onCompletion</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    action: <span class="type">suspend</span> <span class="type">FlowCollector</span>&lt;<span class="type">T</span>&gt;.(<span class="type">cause</span>: <span class="type">Throwable</span>?)</span></span> -&gt; <span class="built_in">Unit</span></span><br><span class="line">): Flow&lt;T&gt; (source)</span><br></pre></td></tr></table></figure>
+<p>以及 <a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/catch.html" target="_blank" rel="noopener">catch</a></p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@ExperimentalCoroutinesApi</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Flow<span class="type">&lt;T&gt;</span>.<span class="title">catch</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    action: <span class="type">suspend</span> <span class="type">FlowCollector</span>&lt;<span class="type">T</span>&gt;.(<span class="type">cause</span>: <span class="type">Throwable</span>)</span></span> -&gt; <span class="built_in">Unit</span></span><br><span class="line">): Flow&lt;T&gt; (source)</span><br></pre></td></tr></table></figure>
+<p>还记得Rxjava的subscribe会返回一个subscription吗？subscription必须被unsubscribe 否则会内存泄漏，因为subscribe接受的是匿名内部类 会持有对外部类对象的引用，然而flow里没这个问题，其collect接受的是suspend function。</p>
+<h4 id="Flow-scheduler"><a href="#Flow-scheduler" class="headerlink" title="Flow scheduler"></a>Flow scheduler</h4><p>flow的调度是针对协程的，RxJava针对线程。flowOn类似subscribeOn，改变上游运行的coroutineContext，不用flowOn而是用withContext等手段让上游发射和下游消费发生在不同协程的话会抛出异常。</p>
 <hr>
-<p>总结来说就是，因为Java语言默认类可继承，一定程度上会加剧在工程中随意继承的现象，而随意继承会不经意间给后面维护埋下坑。并不说不要继承，而是一旦继承就好好设计并写好注释或者文档。</p>
+<p>参考：</p>
+<ul>
+<li><a href="https://medium.com/@elizarov/reactive-streams-and-kotlin-flows-bfd12772cda4" target="_blank" rel="noopener">Reactive Streams vs Kotlin Flows</a> </li>
+</ul>
 
       
     </div>
@@ -400,7 +415,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java/" rel="tag"># Java</a>
+            <a href="/tags/Android/" rel="tag"># Android</a>
           
         </div>
       
@@ -413,8 +428,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/04/11/RxJava2源码分析/" rel="next" title="RxJava2源码分析">
-                <i class="fa fa-chevron-left"></i> RxJava2源码分析
+              <a href="/2019/12/08/利用ASM移除access方法/" rel="next" title="利用ASM移除access方法">
+                <i class="fa fa-chevron-left"></i> 利用ASM移除access方法
               </a>
             
           </div>
@@ -422,10 +437,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/06/29/2019年5月泰国行/" rel="prev" title="2019/05泰国行">
-                2019/05泰国行 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -624,7 +635,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#继承打破了封装性"><span class="nav-number">1.</span> <span class="nav-text">继承打破了封装性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#要么不继承，要么就好好设计并提供文档说明"><span class="nav-number">2.</span> <span class="nav-text">要么不继承，要么就好好设计并提供文档说明</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Flow-in-Kotlin"><span class="nav-number">1.</span> <span class="nav-text">Flow in Kotlin</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Flow-builders"><span class="nav-number">1.1.</span> <span class="nav-text">Flow builders</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Flow-transform"><span class="nav-number">1.2.</span> <span class="nav-text">Flow transform</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Flow-scheduler"><span class="nav-number">1.3.</span> <span class="nav-text">Flow scheduler</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -774,9 +785,9 @@
     
       <script type="text/javascript">
         var disqus_config = function () {
-          this.page.url = 'https://bboylin.github.io/2019/06/25/慎用继承/';
-          this.page.identifier = '2019/06/25/慎用继承/';
-          this.page.title = '慎用继承';
+          this.page.url = 'https://bboylin.github.io/2019/12/16/CoroutineFlow/';
+          this.page.identifier = '2019/12/16/CoroutineFlow/';
+          this.page.title = 'RxJava is no more essential';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://bboylin.disqus.com/embed.js';

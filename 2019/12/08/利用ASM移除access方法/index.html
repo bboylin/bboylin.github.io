@@ -102,7 +102,7 @@
 <meta property="og:site_name" content="24号程序猿">
 <meta property="og:description" content="repo: https://github.com/bboylin/Synth 简介写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-12-08T02:43:01.081Z">
+<meta property="og:updated_time" content="2019-12-16T15:41:40.188Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="利用ASM移除access方法">
 <meta name="twitter:description" content="repo: https://github.com/bboylin/Synth 简介写Android的肯定注意到过：断点调试有时候stacktrace里会出现自己代码里没有出现的方法，而且命名是access$加上一串数字。其实，access方法是Java语法糖生成的synthetic方法，目的是为了实现内部类和外部类之间private member和private field的访问，更具体地举例说，">
@@ -390,7 +390,7 @@
 <li>是不是简单的把access方法里的指令照搬到调用处替换下就能实现内联？大体可以这么考虑 但是细节问题还是不少，不如同样的aload_0指令 在两个方法里的含义是不一样的，因为不同类里局部变量表里第一个成员不同。另外方法的access从private变成package级别后，调用指令也变了，原先invokespecial调用这个方法的地方都得改成invokevirtual，还有指令增加带来的操作数栈的扩展等等。</li>
 <li>如何尽可能控制这个工具自身的风险？ASM提供了<code>CheckClassAdapter</code>用于对字节码编译的校验，尽可能将问题暴露在编译期，从而不带入线上。如果遇到编译出错，可以将具体报错贴出来issue我。同时如果想引用这个工具，最好充分测试app功能的正确性再上线。</li>
 </ul>
-<h4 id="如何引用："><a href="#如何引用：" class="headerlink" title="如何引用："></a>如何引用：</h4><h5 id="1-在project的build-gradle添加"><a href="#1-在project的build-gradle添加" class="headerlink" title="1. 在project的build.gradle添加"></a>1. 在project的build.gradle添加</h5><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath <span class="string">'xyz.bboylin:synth:0.0.1'</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="如何引用："><a href="#如何引用：" class="headerlink" title="如何引用："></a>如何引用：</h4><h5 id="1-在project的build-gradle添加"><a href="#1-在project的build-gradle添加" class="headerlink" title="1. 在project的build.gradle添加"></a>1. 在project的build.gradle添加</h5><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath <span class="string">'xyz.bboylin:synth:0.0.1'</span> <span class="comment">// 请使用GitHub上的最新release版本</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h5 id="2-在app的build-gradle中添加"><a href="#2-在app的build-gradle中添加" class="headerlink" title="2. 在app的build.gradle中添加"></a>2. 在app的build.gradle中添加</h5><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'xyz.bboylin.synth'</span></span><br></pre></td></tr></table></figure>
 <hr>
 <p>any questions contact me : <a href="mailto:bboylin24@gmail.com" target="_blank" rel="noopener">bboylin24@gmail.com</a></p>
@@ -434,6 +434,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/16/CoroutineFlow/" rel="prev" title="RxJava is no more essential">
+                RxJava is no more essential <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -515,7 +519,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">18</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
