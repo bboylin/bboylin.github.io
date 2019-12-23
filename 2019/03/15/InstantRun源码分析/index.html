@@ -106,7 +106,7 @@
 <meta property="og:image" content="https://bboylin.github.io/images/ir-debug.png">
 <meta property="og:image" content="https://bboylin.github.io/images/ws-resources-debug.apk.png">
 <meta property="og:image" content="https://bboylin.github.io/images/ws-dex.png">
-<meta property="og:updated_time" content="2019-03-16T15:51:46.049Z">
+<meta property="og:updated_time" content="2019-12-23T15:26:55.621Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="InstantRun原理以及源码分析">
 <meta name="twitter:description" content="前言Android Studio 从2.0开始就支持了Instant Run ，大大减少了应用编译时长，提升了开发效率。本文将结合Instant Run的源码抛砖引玉，揭开Instant Run 背后的秘密。如有不当之处，烦请不吝赐教。contact me ：bboylin24@gmail.com 本文为作者原创，转载须注明出处。">
@@ -429,6 +429,7 @@
 <p><img src="/images/ws-resources-debug.apk.png" alt></p>
 <p><img src="/images/ws-dex.png" alt></p>
 <p>可知这次只install了resources-debug.apk 和 slice_0.apk。前者新增了我们加入的icon资源，后者新增了R$mipmap类中资源id字段。看到这里，你应该知道了，为什么不直接打成一个apk而是分出10个slice apk，因为大部分更改只需要redex和package单个slice apk，从而把redex的时间降低到原先的10%左右，达到真正的”Instant” Run。</p>
+<p>到这里我们大体已经清楚了整个过程，但是上面hot swap里分析的对代码插桩发生在哪一步呢？很容易猜到是在transform阶段，具体插桩代码可以在gradle源码找到，详见：<a href="https://android.googlesource.com/platform/tools/base/+/refs/tags/gradle_3.4.0/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/transforms/InstantRunTransform.java?autodive=0%2F%2F%2F" target="_blank" rel="noopener">InstantRunTransform.java</a></p>
 <p>完结，撒花🎉🎉🎉</p>
 <p>参考：</p>
 <ul>
