@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Android,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="微信的APM Matrix开源有段时间了，我在看了源码后发现，其作为国民第一应用出品的APM，确实是精益求精，业内领先的。TraceCanary 是其中的一个工具，主要用来监控方法耗时，启动耗时, ANR、掉帧情况等。其分两部分，一部分是以插件的形式在编译期在每个方法执行前后插桩, 用于统计方法耗时；另一部分是运行时的sdk，真正的耗时、卡顿、ANR监控逻辑所在。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="matrix源码分析（一）：TraceCanary">
+<meta property="og:url" content="https://bboylin.github.io/2019/12/24/matrix源码分析1/index.html">
+<meta property="og:site_name" content="24号程序猿">
+<meta property="og:description" content="微信的APM Matrix开源有段时间了，我在看了源码后发现，其作为国民第一应用出品的APM，确实是精益求精，业内领先的。TraceCanary 是其中的一个工具，主要用来监控方法耗时，启动耗时, ANR、掉帧情况等。其分两部分，一部分是以插件的形式在编译期在每个方法执行前后插桩, 用于统计方法耗时；另一部分是运行时的sdk，真正的耗时、卡顿、ANR监控逻辑所在。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-12-26T13:27:42.433Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="matrix源码分析（一）：TraceCanary">
+<meta name="twitter:description" content="微信的APM Matrix开源有段时间了，我在看了源码后发现，其作为国民第一应用出品的APM，确实是精益求精，业内领先的。TraceCanary 是其中的一个工具，主要用来监控方法耗时，启动耗时, ANR、掉帧情况等。其分两部分，一部分是以插件的形式在编译期在每个方法执行前后插桩, 用于统计方法耗时；另一部分是运行时的sdk，真正的耗时、卡顿、ANR监控逻辑所在。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bboylin.github.io/2019/12/24/matrix源码分析1/">
+
+
+
+
+
+  <title>matrix源码分析（一）：TraceCanary | 24号程序猿</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">24号程序猿</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bboylin.github.io/2019/12/24/matrix源码分析1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="bboylin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="24号程序猿">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">matrix源码分析（一）：TraceCanary</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-24T22:35:24+08:00">
+                2019-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2019/12/24/matrix源码分析1/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/12/24/matrix源码分析1/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>微信的APM Matrix开源有段时间了，我在看了源码后发现，其作为国民第一应用出品的APM，确实是精益求精，业内领先的。<a href="https://github.com/Tencent/matrix/wiki/Matrix-Android-TraceCanary" target="_blank" rel="noopener">TraceCanary</a> 是其中的一个工具，主要用来监控方法耗时，启动耗时, ANR、掉帧情况等。其分两部分，一部分是以插件的形式在编译期在每个方法执行前后插桩, 用于统计方法耗时；另一部分是运行时的sdk，真正的耗时、卡顿、ANR监控逻辑所在。<a id="more"></a></p>
+<h2 id="插桩插件"><a href="#插桩插件" class="headerlink" title="插桩插件"></a>插桩插件</h2><p>插桩主要是为了统计方法耗时。gradle插件的代码一般都有个plugin入口，很好找：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Created by zhangshaowen on 17/6/16.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MatrixPlugin</span> <span class="keyword">implements</span> <span class="title">Plugin</span>&lt;<span class="title">Project</span>&gt; &#123;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"Matrix.MatrixPlugin"</span></span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">void</span> apply(Project project) &#123;</span><br><span class="line">        project.extensions.create(<span class="string">"matrix"</span>, MatrixExtension)</span><br><span class="line">        project.matrix.extensions.create(<span class="string">"trace"</span>, MatrixTraceExtension)</span><br><span class="line">        project.matrix.extensions.create(<span class="string">"removeUnusedResources"</span>, MatrixDelUnusedResConfiguration)</span><br><span class="line">        <span class="keyword">if</span> (!project.plugins.hasPlugin(<span class="string">'com.android.application'</span>)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> GradleException(<span class="string">'Matrix Plugin, Android Application plugin required'</span>)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        project.afterEvaluate &#123;</span><br><span class="line">            <span class="keyword">def</span> android = project.extensions.android</span><br><span class="line">            <span class="keyword">def</span> configuration = project.matrix</span><br><span class="line">            android.applicationVariants.all &#123; variant -&gt;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (configuration.trace.enable) &#123;</span><br><span class="line">                    com.tencent.matrix.trace.transform.MatrixTraceTransform.inject(project, configuration.trace, variant.getVariantData().getScope())</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (configuration.removeUnusedResources.enable) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (Util.isNullOrNil(configuration.removeUnusedResources.variant) || variant.name.equalsIgnoreCase(configuration.removeUnusedResources.variant)) &#123;</span><br><span class="line">                        Log.i(TAG, <span class="string">"removeUnusedResources %s"</span>, configuration.removeUnusedResources)</span><br><span class="line">                        RemoveUnusedResourcesTask removeUnusedResourcesTask = project.tasks.create(<span class="string">"remove"</span> + variant.name.capitalize() + <span class="string">"UnusedResources"</span>, RemoveUnusedResourcesTask)</span><br><span class="line">                        removeUnusedResourcesTask.inputs.property(RemoveUnusedResourcesTask.BUILD_VARIANT, variant.name)</span><br><span class="line">                        project.tasks.add(removeUnusedResourcesTask)</span><br><span class="line">                        removeUnusedResourcesTask.dependsOn variant.packageApplication</span><br><span class="line">                        variant.assemble.dependsOn removeUnusedResourcesTask</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到走进了MatrixTraceTransform的inject方法。这里还有个bonus，RemoveUnusedResourcesTask，顾名思义，删除无用资源的task，会在assemble之前触发，内部具体实现后续分析APK Checker的时候再细说。接着看MatrixTraceTransform的inject方法。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> inject(Project project, MatrixTraceExtension extension, VariantScope variantScope) &#123;</span><br><span class="line"></span><br><span class="line">    .......</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        String[] hardTask = getTransformTaskName(extension.getCustomDexTransformName(), variant.getName());</span><br><span class="line">        <span class="keyword">for</span> (Task <span class="string">task :</span> project.getTasks()) &#123;</span><br><span class="line">            <span class="keyword">for</span> (String <span class="string">str :</span> hardTask) &#123;</span><br><span class="line">                <span class="keyword">if</span> (task.getName().equalsIgnoreCase(str) &amp;&amp; task <span class="keyword">instanceof</span> TransformTask) &#123;</span><br><span class="line">                    TransformTask transformTask = (TransformTask) task;</span><br><span class="line">                    Log.i(TAG, <span class="string">"successfully inject task:"</span> + transformTask.getName());</span><br><span class="line">                    Field field = TransformTask.<span class="keyword">class</span>.getDeclaredField(<span class="string">"transform"</span>);</span><br><span class="line">                    field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                    field.set(task, <span class="keyword">new</span> MatrixTraceTransform(config, transformTask.getTransform()));</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        Log.e(TAG, e.toString());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> String[] getTransformTaskName(String customDexTransformName, String buildTypeSuffix) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!Util.isNullOrNil(customDexTransformName)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> String[]&#123;customDexTransformName + <span class="string">"For"</span> + buildTypeSuffix&#125;;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        String[] names = <span class="keyword">new</span> String[]&#123;</span><br><span class="line">                <span class="string">"transformClassesWithDexBuilderFor"</span> + buildTypeSuffix,</span><br><span class="line">                <span class="string">"transformClassesWithDexFor"</span> + buildTypeSuffix,</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="keyword">return</span> names;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到就是通过反射加代理替换transformClassesWithDexForXXX或者新版本gradle的transformClassesWithDexBuilderForXXX task里的transform，来实现在transformClassesWithDexForXXX/transformClassesWithDexBuilderForXXX执行之前执行matrix trace的插桩逻辑。为什么要选择这个时候呢？因为这是打dex的task，在这之前proguard已经执行完了，避免因为插桩代码导致本可以内联的方法无法内联导致dex方法数增多。接着来看transform里的逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doTransform</span><span class="params">(TransformInvocation transformInvocation)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">boolean</span> isIncremental = transformInvocation.isIncremental() &amp;&amp; <span class="keyword">this</span>.isIncremental();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * step 1</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">    List&lt;Future&gt; futures = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> MappingCollector mappingCollector = <span class="keyword">new</span> MappingCollector();</span><br><span class="line">    <span class="keyword">final</span> AtomicInteger methodId = <span class="keyword">new</span> AtomicInteger(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">final</span> ConcurrentHashMap&lt;String, TraceMethod&gt; collectedMethodMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    futures.add(executor.submit(<span class="keyword">new</span> ParseMappingTask(mappingCollector, collectedMethodMap, methodId)));</span><br><span class="line"></span><br><span class="line">    Map&lt;File, File&gt; dirInputOutMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line">    Map&lt;File, File&gt; jarInputOutMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line">    Collection&lt;TransformInput&gt; inputs = transformInvocation.getInputs();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (TransformInput input : inputs) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (DirectoryInput directoryInput : input.getDirectoryInputs()) &#123;</span><br><span class="line">            futures.add(executor.submit(<span class="keyword">new</span> CollectDirectoryInputTask(dirInputOutMap, directoryInput, isIncremental)));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (JarInput inputJar : input.getJarInputs()) &#123;</span><br><span class="line">            futures.add(executor.submit(<span class="keyword">new</span> CollectJarInputTask(inputJar, isIncremental, jarInputOutMap, dirInputOutMap)));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (Future future : futures) &#123;</span><br><span class="line">        future.get();</span><br><span class="line">    &#125;</span><br><span class="line">    futures.clear();</span><br><span class="line"></span><br><span class="line">    Log.i(TAG, <span class="string">"[doTransform] Step(1)[Parse]... cost:%sms"</span>, System.currentTimeMillis() - start);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * step 2</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    start = System.currentTimeMillis();</span><br><span class="line">    MethodCollector methodCollector = <span class="keyword">new</span> MethodCollector(executor, mappingCollector, methodId, config, collectedMethodMap);</span><br><span class="line">    methodCollector.collect(dirInputOutMap.keySet(), jarInputOutMap.keySet());</span><br><span class="line">    Log.i(TAG, <span class="string">"[doTransform] Step(2)[Collection]... cost:%sms"</span>, System.currentTimeMillis() - start);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * step 3</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    start = System.currentTimeMillis();</span><br><span class="line">    MethodTracer methodTracer = <span class="keyword">new</span> MethodTracer(executor, mappingCollector, config, methodCollector.getCollectedMethodMap(), methodCollector.getCollectedClassExtendMap());</span><br><span class="line">    methodTracer.trace(dirInputOutMap, jarInputOutMap);</span><br><span class="line">    Log.i(TAG, <span class="string">"[doTransform] Step(3)[Trace]... cost:%sms"</span>, System.currentTimeMillis() - start);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>三步：先收集dir/jar输入；扫描输入中的method 存在列表里；执行插桩。比较常规的插桩套路，插桩的代码在<code>TraceMethodAdapter</code>, 就不贴出来了。主要做了：</p>
+<ul>
+<li>方法执行前插入<code>AppMethodBeat.i(id)</code></li>
+<li>执行后插入<code>AppMethodBeat.o(id)</code></li>
+<li>对于activity的子类：<ul>
+<li>如果没有重写<code>onWindowFocusChanged</code>方法，则插入重写的<code>onWindowFocusChanged</code>方法，方法内调super后再调<code>AppMethodBeat.at(Activity activity, boolean isFocus)</code>方法打点</li>
+<li>如果有重写<code>onWindowFocusChanged</code>方法，则在<code>onWindowFocusChanged</code>方法后调<code>AppMethodBeat.at(Activity activity, boolean isFocus)</code>方法打点</li>
+</ul>
+</li>
+</ul>
+<p>可见<code>AppMethodBeat</code>是方法耗时打点的入口。</p>
+<h2 id="runtime-sdk"><a href="#runtime-sdk" class="headerlink" title="runtime sdk"></a>runtime sdk</h2><p>Matrix集成的官方示例如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MatrixApplication</span> <span class="keyword">extends</span> <span class="title">Application</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"Matrix.Application"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Context sContext;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> SQLiteLintConfig <span class="title">initSQLiteLintConfig</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">/**</span></span><br><span class="line"><span class="comment">             * HOOK模式下，SQLiteLint会自己去获取所有已执行的sql语句及其耗时(by hooking sqlite3_profile)</span></span><br><span class="line"><span class="comment">             * <span class="doctag">@see</span> 而另一个模式：SQLiteLint.SqlExecutionCallbackMode.CUSTOM_NOTIFY , 则需要调用 &#123;<span class="doctag">@link</span> SQLiteLint#notifySqlExecution(String, String, int)&#125;来通知</span></span><br><span class="line"><span class="comment">             * SQLiteLint 需要分析的、已执行的sql语句及其耗时</span></span><br><span class="line"><span class="comment">             * <span class="doctag">@see</span> TestSQLiteLintActivity#doTest()</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SQLiteLintConfig(SQLiteLint.SqlExecutionCallbackMode.HOOK);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SQLiteLintConfig(SQLiteLint.SqlExecutionCallbackMode.HOOK);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate();</span><br><span class="line">        DynamicConfigImplDemo dynamicConfig = <span class="keyword">new</span> DynamicConfigImplDemo();</span><br><span class="line">        <span class="keyword">boolean</span> matrixEnable = dynamicConfig.isMatrixEnable();</span><br><span class="line">        <span class="keyword">boolean</span> fpsEnable = dynamicConfig.isFPSEnable();</span><br><span class="line">        <span class="keyword">boolean</span> traceEnable = dynamicConfig.isTraceEnable();</span><br><span class="line"></span><br><span class="line">        sContext = <span class="keyword">this</span>;</span><br><span class="line">        MatrixLog.i(TAG, <span class="string">"MatrixApplication.onCreate"</span>);</span><br><span class="line"></span><br><span class="line">        Matrix.Builder builder = <span class="keyword">new</span> Matrix.Builder(<span class="keyword">this</span>);</span><br><span class="line">        builder.patchListener(<span class="keyword">new</span> TestPluginListener(<span class="keyword">this</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">//trace</span></span><br><span class="line">        TraceConfig traceConfig = <span class="keyword">new</span> TraceConfig.Builder()</span><br><span class="line">                .dynamicConfig(dynamicConfig)</span><br><span class="line">                .enableFPS(fpsEnable)</span><br><span class="line">                .enableEvilMethodTrace(traceEnable)</span><br><span class="line">                .enableAnrTrace(traceEnable)</span><br><span class="line">                .enableStartup(traceEnable)</span><br><span class="line">                .splashActivities(<span class="string">"sample.tencent.matrix.SplashActivity;"</span>)</span><br><span class="line">                .isDebug(<span class="keyword">true</span>)</span><br><span class="line">                .isDevEnv(<span class="keyword">false</span>)</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        TracePlugin tracePlugin = (<span class="keyword">new</span> TracePlugin(traceConfig));</span><br><span class="line">        builder.plugin(tracePlugin);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (matrixEnable) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//resource</span></span><br><span class="line">            Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">            ResourceConfig.DumpMode mode = ResourceConfig.DumpMode.AUTO_DUMP;</span><br><span class="line">            MatrixLog.i(TAG, <span class="string">"Dump Activity Leak Mode=%s"</span>, mode);</span><br><span class="line">            intent.setClassName(<span class="keyword">this</span>.getPackageName(), <span class="string">"com.tencent.mm.ui.matrix.ManualDumpActivity"</span>);</span><br><span class="line">            ResourceConfig resourceConfig = <span class="keyword">new</span> ResourceConfig.Builder()</span><br><span class="line">                    .dynamicConfig(dynamicConfig)</span><br><span class="line">                    .setAutoDumpHprofMode(mode)</span><br><span class="line"><span class="comment">//                .setDetectDebuger(true) //matrix test code</span></span><br><span class="line">                    .setNotificationContentIntent(intent)</span><br><span class="line">                    .build();</span><br><span class="line">            builder.plugin(<span class="keyword">new</span> ResourcePlugin(resourceConfig));</span><br><span class="line">            ResourcePlugin.activityLeakFixer(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">//io</span></span><br><span class="line">            IOCanaryPlugin ioCanaryPlugin = <span class="keyword">new</span> IOCanaryPlugin(<span class="keyword">new</span> IOConfig.Builder()</span><br><span class="line">                    .dynamicConfig(dynamicConfig)</span><br><span class="line">                    .build());</span><br><span class="line">            builder.plugin(ioCanaryPlugin);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">            <span class="comment">// prevent api 19 UnsatisfiedLinkError</span></span><br><span class="line">            <span class="comment">//sqlite</span></span><br><span class="line">            SQLiteLintConfig sqlLiteConfig;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                sqlLiteConfig = <span class="keyword">new</span> SQLiteLintConfig(SQLiteLint.SqlExecutionCallbackMode.CUSTOM_NOTIFY);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">                sqlLiteConfig = <span class="keyword">new</span> SQLiteLintConfig(SQLiteLint.SqlExecutionCallbackMode.CUSTOM_NOTIFY);</span><br><span class="line">            &#125;</span><br><span class="line">            builder.plugin(<span class="keyword">new</span> SQLiteLintPlugin(sqlLiteConfig));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Matrix.init(builder.build());</span><br><span class="line"></span><br><span class="line">        <span class="comment">//start only startup tracer, close other tracer.</span></span><br><span class="line">        tracePlugin.start();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Context <span class="title">getContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> sContext;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Trace Canary / Resource Canary / IO Canary / SQLite Lint</code> 这四个功能都是独立的plugin，Application初始化的时候在Matrix Builder中设置对应的plugin即可集成。在Matrix实例构建的时候会调每个plugin的init方法，来看下<code>TracePlugin</code>的init方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(Application app, PluginListener listener)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.init(app, listener);</span><br><span class="line">    MatrixLog.i(TAG, <span class="string">"trace plugin init, trace config: %s"</span>, traceConfig.toString());</span><br><span class="line">    <span class="keyword">if</span> (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.JELLY_BEAN) &#123;</span><br><span class="line">        MatrixLog.e(TAG, <span class="string">"[FrameBeat] API is low Build.VERSION_CODES.JELLY_BEAN(16), TracePlugin is not supported"</span>);</span><br><span class="line">        unSupportPlugin();</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    anrTracer = <span class="keyword">new</span> AnrTracer(traceConfig);</span><br><span class="line"></span><br><span class="line">    frameTracer = <span class="keyword">new</span> FrameTracer(traceConfig);</span><br><span class="line"></span><br><span class="line">    evilMethodTracer = <span class="keyword">new</span> EvilMethodTracer(traceConfig);</span><br><span class="line"></span><br><span class="line">    startupTracer = <span class="keyword">new</span> StartupTracer(traceConfig);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.start();</span><br><span class="line">    <span class="keyword">if</span> (!isSupported()) &#123;</span><br><span class="line">        MatrixLog.w(TAG, <span class="string">"[start] Plugin is unSupported!"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    MatrixLog.w(TAG, <span class="string">"start!"</span>);</span><br><span class="line">    Runnable runnable = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!UIThreadMonitor.getMonitor().isInit()) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    UIThreadMonitor.getMonitor().init(traceConfig);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (java.lang.RuntimeException e) &#123;</span><br><span class="line">                    MatrixLog.e(TAG, <span class="string">"[start] RuntimeException:%s"</span>, e);</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            AppMethodBeat.getInstance().onStart();</span><br><span class="line"></span><br><span class="line">            UIThreadMonitor.getMonitor().onStart();</span><br><span class="line"></span><br><span class="line">            anrTracer.onStartTrace();</span><br><span class="line"></span><br><span class="line">            frameTracer.onStartTrace();</span><br><span class="line"></span><br><span class="line">            evilMethodTracer.onStartTrace();</span><br><span class="line"></span><br><span class="line">            startupTracer.onStartTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (Thread.currentThread() == Looper.getMainLooper().getThread()) &#123;</span><br><span class="line">        runnable.run();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        MatrixLog.w(TAG, <span class="string">"start TracePlugin in Thread[%s] but not in mainThread!"</span>, Thread.currentThread().getId());</span><br><span class="line">        MatrixHandlerThread.getDefaultMainHandler().post(runnable);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>创建了四个tracer实例，然后调用了：AppMethodBeat单例的onStart()方法、UIThreadMonitor单例的onStart()方法以及每个tracer的onStartTrace方法。</p>
+<ul>
+<li>anrTracer: 主要进行ANR的监控上报</li>
+<li>frameTracer：掉帧数和帧率的监控上报</li>
+<li>evilMethodTracer： 方法耗时的监控上报</li>
+<li>startupTracer： 启动速度的监控上报</li>
+</ul>
+<p>他们都继承自<code>Tracer</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Tracer</span> <span class="keyword">extends</span> <span class="title">LooperObserver</span> <span class="keyword">implements</span> <span class="title">ITracer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> isAlive = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"Matrix.Tracer"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@CallSuper</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onAlive</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        MatrixLog.i(TAG, <span class="string">"[onAlive] %s"</span>, <span class="keyword">this</span>.getClass().getName());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@CallSuper</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onDead</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        MatrixLog.i(TAG, <span class="string">"[onDead] %s"</span>, <span class="keyword">this</span>.getClass().getName());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onStartTrace</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (!isAlive) &#123;</span><br><span class="line">            <span class="keyword">this</span>.isAlive = <span class="keyword">true</span>;</span><br><span class="line">            onAlive();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCloseTrace</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (isAlive) &#123;</span><br><span class="line">            <span class="keyword">this</span>.isAlive = <span class="keyword">false</span>;</span><br><span class="line">            onDead();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onForeground</span><span class="params">(<span class="keyword">boolean</span> isForeground)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isAlive</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> isAlive;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isForeground</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> AppActiveMatrixDelegate.INSTANCE.isAppForeground();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Tracer</code>继承自<code>LooperObserver</code>，这也是Matrix自己定义的类。这里需要先介绍下Matrix监控主线程卡顿的原理，和BlockCanary一样： Looper的loop方法中会循环取MessageQueue里的Message执行，执行前后分别会打印一次特殊的log，通过设置主线程looper中的printer，拦截到特殊的log后就能知道主线程dispatch某个message的耗时了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Run the message queue in this thread. Be sure to call</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> #quit()&#125; to end the loop.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">loop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Looper me = myLooper();</span><br><span class="line">    <span class="keyword">if</span> (me == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"No Looper; Looper.prepare() wasn't called on this thread."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">final</span> MessageQueue queue = me.mQueue;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        Message msg = queue.next(); <span class="comment">// might block</span></span><br><span class="line">        <span class="keyword">if</span> (msg == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// No message indicates that the message queue is quitting.</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// This must be in a local variable, in case a UI event sets the logger</span></span><br><span class="line">        <span class="keyword">final</span> Printer logging = me.mLogging;</span><br><span class="line">        <span class="keyword">if</span> (logging != <span class="keyword">null</span>) &#123;</span><br><span class="line">            logging.println(<span class="string">"&gt;&gt;&gt;&gt;&gt; Dispatching to "</span> + msg.target + <span class="string">" "</span> +</span><br><span class="line">                    msg.callback + <span class="string">": "</span> + msg.what);</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            msg.target.dispatchMessage(msg);</span><br><span class="line">            dispatchEnd = needEndTime ? SystemClock.uptimeMillis() : <span class="number">0</span>;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (traceTag != <span class="number">0</span>) &#123;</span><br><span class="line">                Trace.traceEnd(traceTag);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">        <span class="keyword">if</span> (logging != <span class="keyword">null</span>) &#123;</span><br><span class="line">            logging.println(<span class="string">"&lt;&lt;&lt;&lt;&lt; Finished to "</span> + msg.target + <span class="string">" "</span> + msg.callback);</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Matrix按照这个思路在dispatch Message的开始和结束通过观察者模式通知<code>LooperObserver</code>进行耗时统计，EvilMethodTracer、FrameTracer和AnrTracer这仨observer都注册到了UIThreadMonitor(observable)上，在主线程message dispatch的前后LooperMonitor会通知UIThreadMonitor，UIThreadMonitor通知observer进行打点。</p>
+<h3 id="EvilMethodTracer"><a href="#EvilMethodTracer" class="headerlink" title="EvilMethodTracer"></a>EvilMethodTracer</h3><p>EvilMethodTracer以TraceConfig中配置的方法耗时阈值（默认是700毫秒）来判断某个message dispatch时间是否过长，超过阈值则把进程信息，CPU使用率，调用栈(包含具体方法耗时)，这帧input、animation、traversal耗时等信息上报。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchBegin</span><span class="params">(<span class="keyword">long</span> beginMs, <span class="keyword">long</span> cpuBeginMs, <span class="keyword">long</span> token)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.dispatchBegin(beginMs, cpuBeginMs, token);</span><br><span class="line">    indexRecord = AppMethodBeat.getInstance().maskIndex(<span class="string">"EvilMethodTracer#dispatchBegin"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFrame</span><span class="params">(String focusedActivityName, <span class="keyword">long</span> start, <span class="keyword">long</span> end, <span class="keyword">long</span> frameCostMs, <span class="keyword">long</span> inputCostNs, <span class="keyword">long</span> animationCostNs, <span class="keyword">long</span> traversalCostNs)</span> </span>&#123;</span><br><span class="line">    queueTypeCosts[<span class="number">0</span>] = inputCostNs;</span><br><span class="line">    queueTypeCosts[<span class="number">1</span>] = animationCostNs;</span><br><span class="line">    queueTypeCosts[<span class="number">2</span>] = traversalCostNs;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchEnd</span><span class="params">(<span class="keyword">long</span> beginMs, <span class="keyword">long</span> cpuBeginMs, <span class="keyword">long</span> endMs, <span class="keyword">long</span> cpuEndMs, <span class="keyword">long</span> token, <span class="keyword">boolean</span> isBelongFrame)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.dispatchEnd(beginMs, cpuBeginMs, endMs, cpuEndMs, token, isBelongFrame);</span><br><span class="line">    <span class="keyword">long</span> start = config.isDevEnv() ? System.currentTimeMillis() : <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">long</span> dispatchCost = endMs - beginMs;</span><br><span class="line">        <span class="comment">// 超过阈值上报耗时方法信息</span></span><br><span class="line">        <span class="keyword">if</span> (dispatchCost &gt;= evilThresholdMs) &#123;</span><br><span class="line">            <span class="keyword">long</span>[] data = AppMethodBeat.getInstance().copyData(indexRecord);</span><br><span class="line">            <span class="keyword">long</span>[] queueCosts = <span class="keyword">new</span> <span class="keyword">long</span>[<span class="number">3</span>];</span><br><span class="line">            System.arraycopy(queueTypeCosts, <span class="number">0</span>, queueCosts, <span class="number">0</span>, <span class="number">3</span>);</span><br><span class="line">            String scene = AppMethodBeat.getVisibleScene();</span><br><span class="line">            MatrixHandlerThread.getDefaultHandler().post(<span class="keyword">new</span> AnalyseTask(isForeground(), scene, data, queueCosts, cpuEndMs - cpuBeginMs, endMs - beginMs, endMs));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        indexRecord.release();</span><br><span class="line">        <span class="keyword">if</span> (config.isDevEnv()) &#123;</span><br><span class="line">            String usage = Utils.calculateCpuUsage(cpuEndMs - cpuBeginMs, endMs - beginMs);</span><br><span class="line">            MatrixLog.v(TAG, <span class="string">"[dispatchEnd] token:%s cost:%sms cpu:%sms usage:%s innerCost:%s"</span>,</span><br><span class="line">                    token, endMs - beginMs, cpuEndMs - cpuBeginMs, usage, System.currentTimeMillis() - start);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 耗时分析和上报</span></span><br><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">AnalyseTask</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span>[] queueCost;</span><br><span class="line">    <span class="keyword">long</span>[] data;</span><br><span class="line">    <span class="keyword">long</span> cpuCost;</span><br><span class="line">    <span class="keyword">long</span> cost;</span><br><span class="line">    <span class="keyword">long</span> endMs;</span><br><span class="line">    String scene;</span><br><span class="line">    <span class="keyword">boolean</span> isForeground;</span><br><span class="line"></span><br><span class="line">    AnalyseTask(<span class="keyword">boolean</span> isForeground, String scene, <span class="keyword">long</span>[] data, <span class="keyword">long</span>[] queueCost, <span class="keyword">long</span> cpuCost, <span class="keyword">long</span> cost, <span class="keyword">long</span> endMs) &#123;</span><br><span class="line">        <span class="keyword">this</span>.isForeground = isForeground;</span><br><span class="line">        <span class="keyword">this</span>.scene = scene;</span><br><span class="line">        <span class="keyword">this</span>.cost = cost;</span><br><span class="line">        <span class="keyword">this</span>.cpuCost = cpuCost;</span><br><span class="line">        <span class="keyword">this</span>.data = data;</span><br><span class="line">        <span class="keyword">this</span>.queueCost = queueCost;</span><br><span class="line">        <span class="keyword">this</span>.endMs = endMs;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">analyse</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// process</span></span><br><span class="line">        <span class="keyword">int</span>[] processStat = Utils.getProcessPriority(Process.myPid());</span><br><span class="line">        String usage = Utils.calculateCpuUsage(cpuCost, cost);</span><br><span class="line">        LinkedList&lt;MethodItem&gt; stack = <span class="keyword">new</span> LinkedList();</span><br><span class="line">        <span class="keyword">if</span> (data.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            TraceDataUtils.structuredDataToStack(data, stack, <span class="keyword">true</span>, endMs);</span><br><span class="line">            TraceDataUtils.trimStack(stack, Constants.TARGET_EVIL_METHOD_STACK, <span class="keyword">new</span> TraceDataUtils.IStructuredDataFilter() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isFilter</span><span class="params">(<span class="keyword">long</span> during, <span class="keyword">int</span> filterCount)</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> during &lt; filterCount * Constants.TIME_UPDATE_CYCLE_MS;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getFilterMaxCount</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                    <span class="keyword">return</span> Constants.FILTER_STACK_MAX_COUNT;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fallback</span><span class="params">(List&lt;MethodItem&gt; stack, <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">                    MatrixLog.w(TAG, <span class="string">"[fallback] size:%s targetSize:%s stack:%s"</span>, size, Constants.TARGET_EVIL_METHOD_STACK, stack);</span><br><span class="line">                    Iterator iterator = stack.listIterator(Math.min(size, Constants.TARGET_EVIL_METHOD_STACK));</span><br><span class="line">                    <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">                        iterator.next();</span><br><span class="line">                        iterator.remove();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        StringBuilder reportBuilder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        StringBuilder logcatBuilder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        <span class="keyword">long</span> stackCost = Math.max(cost, TraceDataUtils.stackToString(stack, reportBuilder, logcatBuilder));</span><br><span class="line">        String stackKey = TraceDataUtils.getTreeKey(stack, stackCost);</span><br><span class="line"></span><br><span class="line">        MatrixLog.w(TAG, <span class="string">"%s"</span>, printEvil(scene, processStat, isForeground, logcatBuilder, stack.size(), stackKey, usage, queueCost[<span class="number">0</span>], queueCost[<span class="number">1</span>], queueCost[<span class="number">2</span>], cost)); <span class="comment">// for logcat</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (stackCost &gt;= Constants.DEFAULT_ANR_INVALID || processStat[<span class="number">0</span>] &gt; <span class="number">10</span>) &#123;</span><br><span class="line">            MatrixLog.w(TAG, <span class="string">"The checked anr task was not executed on time. "</span></span><br><span class="line">                    + <span class="string">"The possible reason is that the current process has a low priority. just pass this report"</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// report</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TracePlugin plugin = Matrix.with().getPluginByClass(TracePlugin.class);</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">null</span> == plugin) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            JSONObject jsonObject = <span class="keyword">new</span> JSONObject();</span><br><span class="line">            jsonObject = DeviceUtil.getDeviceInfo(jsonObject, Matrix.with().getApplication());</span><br><span class="line"></span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_STACK_TYPE, Constants.Type.NORMAL);</span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_COST, stackCost);</span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_CPU_USAGE, usage);</span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_SCENE, scene);</span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_TRACE_STACK, reportBuilder.toString());</span><br><span class="line">            jsonObject.put(SharePluginInfo.ISSUE_STACK_KEY, stackKey);</span><br><span class="line"></span><br><span class="line">            Issue issue = <span class="keyword">new</span> Issue();</span><br><span class="line">            issue.setTag(SharePluginInfo.TAG_PLUGIN_EVIL_METHOD);</span><br><span class="line">            issue.setContent(jsonObject);</span><br><span class="line">            plugin.onDetectIssue(issue);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (JSONException e) &#123;</span><br><span class="line">            MatrixLog.e(TAG, <span class="string">"[JSONException error: %s"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        analyse();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> String <span class="title">printEvil</span><span class="params">(String scene, <span class="keyword">int</span>[] processStat, <span class="keyword">boolean</span> isForeground, StringBuilder stack, <span class="keyword">long</span> stackSize, String stackKey, String usage, <span class="keyword">long</span> inputCost,</span></span></span><br><span class="line"><span class="function"><span class="params">                             <span class="keyword">long</span> animationCost, <span class="keyword">long</span> traversalCost, <span class="keyword">long</span> allCost)</span> </span>&#123;</span><br><span class="line">        StringBuilder print = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        print.append(String.format(<span class="string">"-\n&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; maybe happens Jankiness!(%sms) &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;\n"</span>, allCost));</span><br><span class="line">        print.append(<span class="string">"|* scene: "</span>).append(scene).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|* [ProcessStat]"</span>).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tPriority: "</span>).append(processStat[<span class="number">0</span>]).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tNice: "</span>).append(processStat[<span class="number">1</span>]).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tForeground: "</span>).append(isForeground).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|* [CPU]"</span>).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tusage: "</span>).append(usage).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|* [doFrame]"</span>).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tinputCost: "</span>).append(inputCost).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tanimationCost: "</span>).append(animationCost).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\ttraversalCost: "</span>).append(traversalCost).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|* [Trace]"</span>).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tStackSize: "</span>).append(stackSize).append(<span class="string">"\n"</span>);</span><br><span class="line">        print.append(<span class="string">"|*\t\tStackKey: "</span>).append(stackKey).append(<span class="string">"\n"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (config.isDebug()) &#123;</span><br><span class="line">            print.append(stack.toString());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        print.append(<span class="string">"========================================================================="</span>);</span><br><span class="line">        <span class="keyword">return</span> print.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了减少频繁调用<code>System.currentTimeMillis()</code>带来的性能开销，Matrix启动了一个后台线程，每5秒更新一次时间戳，AppMethodBeat打点的时候直接用计算好的时间戳。</p>
+<p>可能你会问，这帧input、animation、traversal耗时是怎么算出来的? Choreographer并没有给我们这样的接口。这就得说说Choreographer的源码了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">doFrame</span><span class="params">(<span class="keyword">long</span> frameTimeNanos, <span class="keyword">int</span> frame)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> startNanos;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!mFrameScheduled) &#123;</span><br><span class="line">            <span class="keyword">return</span>; <span class="comment">// no work to do</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (DEBUG_JANK &amp;&amp; mDebugPrintNextFrameTimeDelta) &#123;</span><br><span class="line">            mDebugPrintNextFrameTimeDelta = <span class="keyword">false</span>;</span><br><span class="line">            Log.d(TAG, <span class="string">"Frame time delta: "</span></span><br><span class="line">                    + ((frameTimeNanos - mLastFrameTimeNanos) * <span class="number">0.000001f</span>) + <span class="string">" ms"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">long</span> intendedFrameTimeNanos = frameTimeNanos;</span><br><span class="line">        startNanos = System.nanoTime();</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> jitterNanos = startNanos - frameTimeNanos;</span><br><span class="line">        <span class="keyword">if</span> (jitterNanos &gt;= mFrameIntervalNanos) &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">long</span> skippedFrames = jitterNanos / mFrameIntervalNanos;</span><br><span class="line">            <span class="keyword">if</span> (skippedFrames &gt;= SKIPPED_FRAME_WARNING_LIMIT) &#123;</span><br><span class="line">                Log.i(TAG, <span class="string">"Skipped "</span> + skippedFrames + <span class="string">" frames!  "</span></span><br><span class="line">                        + <span class="string">"The application may be doing too much work on its main thread."</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">long</span> lastFrameOffset = jitterNanos % mFrameIntervalNanos;</span><br><span class="line">            <span class="keyword">if</span> (DEBUG_JANK) &#123;</span><br><span class="line">                Log.d(TAG, <span class="string">"Missed vsync by "</span> + (jitterNanos * <span class="number">0.000001f</span>) + <span class="string">" ms "</span></span><br><span class="line">                        + <span class="string">"which is more than the frame interval of "</span></span><br><span class="line">                        + (mFrameIntervalNanos * <span class="number">0.000001f</span>) + <span class="string">" ms!  "</span></span><br><span class="line">                        + <span class="string">"Skipping "</span> + skippedFrames + <span class="string">" frames and setting frame "</span></span><br><span class="line">                        + <span class="string">"time to "</span> + (lastFrameOffset * <span class="number">0.000001f</span>) + <span class="string">" ms in the past."</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            frameTimeNanos = startNanos - lastFrameOffset;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (frameTimeNanos &lt; mLastFrameTimeNanos) &#123;</span><br><span class="line">            <span class="keyword">if</span> (DEBUG_JANK) &#123;</span><br><span class="line">                Log.d(TAG, <span class="string">"Frame time appears to be going backwards.  May be due to a "</span></span><br><span class="line">                        + <span class="string">"previously skipped frame.  Waiting for next vsync."</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            scheduleVsyncLocked();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mFPSDivisor &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">long</span> timeSinceVsync = frameTimeNanos - mLastFrameTimeNanos;</span><br><span class="line">            <span class="keyword">if</span> (timeSinceVsync &lt; (mFrameIntervalNanos * mFPSDivisor) &amp;&amp; timeSinceVsync &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                scheduleVsyncLocked();</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mFrameInfo.setVsync(intendedFrameTimeNanos, frameTimeNanos);</span><br><span class="line">        mFrameScheduled = <span class="keyword">false</span>;</span><br><span class="line">        mLastFrameTimeNanos = frameTimeNanos;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Trace.traceBegin(Trace.TRACE_TAG_VIEW, <span class="string">"Choreographer#doFrame"</span>);</span><br><span class="line">        AnimationUtils.lockAnimationClock(frameTimeNanos / TimeUtils.NANOS_PER_MS);</span><br><span class="line"></span><br><span class="line">        mFrameInfo.markInputHandlingStart();</span><br><span class="line">        doCallbacks(Choreographer.CALLBACK_INPUT, frameTimeNanos);</span><br><span class="line"></span><br><span class="line">        mFrameInfo.markAnimationsStart();</span><br><span class="line">        doCallbacks(Choreographer.CALLBACK_ANIMATION, frameTimeNanos);</span><br><span class="line"></span><br><span class="line">        mFrameInfo.markPerformTraversalsStart();</span><br><span class="line">        doCallbacks(Choreographer.CALLBACK_TRAVERSAL, frameTimeNanos);</span><br><span class="line"></span><br><span class="line">        doCallbacks(Choreographer.CALLBACK_COMMIT, frameTimeNanos);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        AnimationUtils.unlockAnimationClock();</span><br><span class="line">        Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (DEBUG_FRAMES) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> endNanos = System.nanoTime();</span><br><span class="line">        Log.d(TAG, <span class="string">"Frame "</span> + frame + <span class="string">": Finished, took "</span></span><br><span class="line">                + (endNanos - startNanos) * <span class="number">0.000001f</span> + <span class="string">" ms, latency "</span></span><br><span class="line">                + (startNanos - frameTimeNanos) * <span class="number">0.000001f</span> + <span class="string">" ms."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Choreographer负责接收和处理所有界面更新消息，在收到VSYNC信号的时候统一处理，按顺序执行CALLBACK_INPUT（input事件）、CALLBACK_ANIMATION（动画）、CALLBACK_TRAVERSAL（layout、draw）、CALLBACK_COMMIT(ActivityThread post的，执行scheduleTrimMemory)这几种callback，这几种callback分别在各自的CallbackQueue里存着，只要在对应的CallbackQueue的头插入一个callback，就能统计出input、animation、traversal这几个阶段的耗时。</p>
+<p>具体代码在UIThreadMonitor中，首先其初始化的时候会反射拿到Choreographer里的CALLBACK_INPUT、CALLBACK_ANIMATION、CALLBACK_TRAVERSAL这三种CallbackQueue，接着反射拿到他们的<code>addCallbackLocked</code>方法以备调用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Object callbackQueueLock;</span><br><span class="line"><span class="keyword">private</span> Object[] callbackQueues;</span><br><span class="line"><span class="keyword">private</span> Method addTraversalQueue;</span><br><span class="line"><span class="keyword">private</span> Method addInputQueue;</span><br><span class="line"><span class="keyword">private</span> Method addAnimationQueue;</span><br><span class="line"><span class="keyword">private</span> Choreographer choreographer;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> frameIntervalNanos = <span class="number">16666666</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span>[] queueStatus = <span class="keyword">new</span> <span class="keyword">int</span>[CALLBACK_LAST + <span class="number">1</span>];</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span>[] callbackExist = <span class="keyword">new</span> <span class="keyword">boolean</span>[CALLBACK_LAST + <span class="number">1</span>]; <span class="comment">// ABA</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span>[] queueCost = <span class="keyword">new</span> <span class="keyword">long</span>[CALLBACK_LAST + <span class="number">1</span>];</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">boolean</span> isInit = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(TraceConfig config)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (Thread.currentThread() != Looper.getMainLooper().getThread()) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> AssertionError(<span class="string">"must be init in main thread!"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.config = config;</span><br><span class="line">    choreographer = Choreographer.getInstance();</span><br><span class="line">    callbackQueueLock = reflectObject(choreographer, <span class="string">"mLock"</span>);</span><br><span class="line">    callbackQueues = reflectObject(choreographer, <span class="string">"mCallbackQueues"</span>);</span><br><span class="line"></span><br><span class="line">    addInputQueue = reflectChoreographerMethod(callbackQueues[CALLBACK_INPUT], ADD_CALLBACK, <span class="keyword">long</span>.class, Object.class, Object.class);</span><br><span class="line">    addAnimationQueue = reflectChoreographerMethod(callbackQueues[CALLBACK_ANIMATION], ADD_CALLBACK, <span class="keyword">long</span>.class, Object.class, Object.class);</span><br><span class="line">    addTraversalQueue = reflectChoreographerMethod(callbackQueues[CALLBACK_TRAVERSAL], ADD_CALLBACK, <span class="keyword">long</span>.class, Object.class, Object.class);</span><br><span class="line">    frameIntervalNanos = reflectObject(choreographer, <span class="string">"mFrameIntervalNanos"</span>);</span><br><span class="line"></span><br><span class="line">    LooperMonitor.register(<span class="keyword">new</span> LooperMonitor.LooperDispatchListener() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isValid</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> isAlive;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchStart</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.dispatchStart();</span><br><span class="line">            UIThreadMonitor.<span class="keyword">this</span>.dispatchBegin();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchEnd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.dispatchEnd();</span><br><span class="line">            UIThreadMonitor.<span class="keyword">this</span>.dispatchEnd();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">this</span>.isInit = <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后在其创建时候的start和每次message的dispatchEnd方法中会调用<code>addFrameCallback(CALLBACK_INPUT, this, true);</code>给input类型的CallbackQueue头上插入一个callback（就是UIThreadMonitor自己）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">addFrameCallback</span><span class="params">(<span class="keyword">int</span> type, Runnable callback, <span class="keyword">boolean</span> isAddHeader)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (callbackExist[type]) &#123;</span><br><span class="line">        MatrixLog.w(TAG, <span class="string">"[addFrameCallback] this type %s callback has exist! isAddHeader:%s"</span>, type, isAddHeader);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!isAlive &amp;&amp; type == CALLBACK_INPUT) &#123;</span><br><span class="line">        MatrixLog.w(TAG, <span class="string">"[addFrameCallback] UIThreadMonitor is not alive!"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (callbackQueueLock) &#123;</span><br><span class="line">            Method method = <span class="keyword">null</span>;</span><br><span class="line">            <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">                <span class="keyword">case</span> CALLBACK_INPUT:</span><br><span class="line">                    method = addInputQueue;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> CALLBACK_ANIMATION:</span><br><span class="line">                    method = addAnimationQueue;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> CALLBACK_TRAVERSAL:</span><br><span class="line">                    method = addTraversalQueue;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">null</span> != method) &#123;</span><br><span class="line">                method.invoke(callbackQueues[type], !isAddHeader ? SystemClock.uptimeMillis() : -<span class="number">1</span>, callback, <span class="keyword">null</span>);</span><br><span class="line">                callbackExist[type] = <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        MatrixLog.e(TAG, e.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行到<code>UIThreadMonitor</code>这个input callback的时候会进行打点，然后给CALLBACK_ANIMATION的CallbackQueue头插入callback，这个callback的执行就表示input执行结束，animation执行开始，从而统计出处理input阶段耗时。CALLBACK_TRAVERSAL同，不赘述。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> start = System.nanoTime();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        doFrameBegin(token);</span><br><span class="line">        doQueueBegin(CALLBACK_INPUT);</span><br><span class="line"></span><br><span class="line">        addFrameCallback(CALLBACK_ANIMATION, <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                doQueueEnd(CALLBACK_INPUT);</span><br><span class="line">                doQueueBegin(CALLBACK_ANIMATION);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">        addFrameCallback(CALLBACK_TRAVERSAL, <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                doQueueEnd(CALLBACK_ANIMATION);</span><br><span class="line">                doQueueBegin(CALLBACK_TRAVERSAL);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (config.isDevEnv()) &#123;</span><br><span class="line">            MatrixLog.d(TAG, <span class="string">"[UIThreadMonitor#run] inner cost:%sns"</span>, System.nanoTime() - start);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>到这里其实耗时方法统计的原理已经清楚了。</p>
+<h3 id="AnrTracer"><a href="#AnrTracer" class="headerlink" title="AnrTracer"></a>AnrTracer</h3><p>ANR耗时在方法耗时的基础上进行上报，在开始dispatch的时候post一个5秒后执行的runnable，然后在结束的时候cancel这个runnable。runnable执行的时候就说明发生了ANR，进行数据上报。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchBegin</span><span class="params">(<span class="keyword">long</span> beginMs, <span class="keyword">long</span> cpuBeginMs, <span class="keyword">long</span> token)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.dispatchBegin(beginMs, cpuBeginMs, token);</span><br><span class="line">    anrTask = <span class="keyword">new</span> AnrHandleTask(AppMethodBeat.getInstance().maskIndex(<span class="string">"AnrTracer#dispatchBegin"</span>), token);</span><br><span class="line">    <span class="keyword">if</span> (traceConfig.isDevEnv()) &#123;</span><br><span class="line">        MatrixLog.v(TAG, <span class="string">"* [dispatchBegin] token:%s index:%s"</span>, token, anrTask.beginRecord.index);</span><br><span class="line">    &#125;</span><br><span class="line">    anrHandler.postDelayed(anrTask, Constants.DEFAULT_ANR - (SystemClock.uptimeMillis() - token));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dispatchEnd</span><span class="params">(<span class="keyword">long</span> beginMs, <span class="keyword">long</span> cpuBeginMs, <span class="keyword">long</span> endMs, <span class="keyword">long</span> cpuEndMs, <span class="keyword">long</span> token, <span class="keyword">boolean</span> isBelongFrame)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.dispatchEnd(beginMs, cpuBeginMs, endMs, cpuEndMs, token, isBelongFrame);</span><br><span class="line">    <span class="keyword">if</span> (traceConfig.isDevEnv()) &#123;</span><br><span class="line">        MatrixLog.v(TAG, <span class="string">"[dispatchEnd] token:%s cost:%sms cpu:%sms usage:%s"</span>,</span><br><span class="line">                token, endMs - beginMs, cpuEndMs - cpuBeginMs, Utils.calculateCpuUsage(cpuEndMs - cpuBeginMs, endMs - beginMs));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">null</span> != anrTask) &#123;</span><br><span class="line">        anrTask.getBeginRecord().release();</span><br><span class="line">        anrHandler.removeCallbacks(anrTask);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="FrameTracer"><a href="#FrameTracer" class="headerlink" title="FrameTracer"></a>FrameTracer</h3><p>FrameTracer主要统计的是掉帧数和帧率，掉帧数有时候相比帧率能更好的反映视觉上的卡顿，比如30帧每秒可能不高 但是只要帧数稳定，人眼感觉到的依然是流畅的画面，而一旦某帧执行时间过长，那卡顿感就比较明显了。掉帧数通过某帧耗时除以16.666666秒来计算。一帧的耗时就是通过上面所说的msg dispatch前后时间计算的，然后doFrame当执行到INPUT类型的callback的时候就标记这是更新界面的message。</p>
+<h3 id="StartupTracer"><a href="#StartupTracer" class="headerlink" title="StartupTracer"></a>StartupTracer</h3><p>主要统计应用冷启、热启、首屏、单个activity启动等阶段耗时：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">* firstMethod.i       LAUNCH_ACTIVITY   onWindowFocusChange   LAUNCH_ACTIVITY    onWindowFocusChange</span><br><span class="line">* ^                         ^                   ^                     ^                  ^</span><br><span class="line">* |                         |                   |                     |                  |</span><br><span class="line">* |---------app---------|---|---firstActivity---|---------...---------|---careActivity---|</span><br><span class="line">* |&lt;--applicationCost--&gt;|</span><br><span class="line">* |&lt;----firstScreenCost----&gt;|</span><br><span class="line">* |&lt;---------------------------allCost(cold)-------------------------&gt;|</span><br><span class="line">* .                         |&lt;--allCost(warm)--&gt;|</span><br></pre></td></tr></table></figure>
+<p> 启动和首屏出现耗时的起点都是应用中的第一个方法开始执行的时间，通过前面的插桩已经可以拿到了。因为handler处理message的优先顺序是：</p>
+<p> <code>msg自身的callback（不向下传递）</code> &gt; <code>handler自身的mCallback(如果handleMessage返回true不向下传递，false继续传给handler的handleMessage)</code> &gt; <code>handler的handleMessage()</code></p>
+<p> 所以通过反射加代理替换掉ActivityThread的mH的mCallback，就可以进行对activity和application启动的打点。</p>
+<p> 在Android 9.0以前 activity的启动通过发送一个what是LAUNCH_ACTIVITY的msg给mH，mH收到后调用ActivityThread的<code>handleLaunchActivity</code>从而开始启动activity； 9.0及以后去除了activity生命周期相关的msg.what，统一使用<code>what</code>是<code>EXECUTE_TRANSACTION</code>，obj是<code>ClientTransaction</code>实例的msg来通知mH执行生命周期。<code>ClientTransaction</code>其callbacks是<code>ClientTransactionItem</code> list，launch activity的时候其callback是<code>LaunchActivityItem</code> (继承自ClientTransactionItem), 可据此判断调起activity。</p>
+<p> application创建结束的时间计算方法是：只要activity开始launch或者service开始create或者broadcastReceiver开始创建就算application创建结束。</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ActivityThreadHacker</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"Matrix.ActivityThreadHacker"</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> sApplicationCreateBeginTime = <span class="number">0L</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> sApplicationCreateEndTime = <span class="number">0L</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> sLastLaunchActivityTime = <span class="number">0L</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> AppMethodBeat.IndexRecord sLastLaunchActivityMethodIndex = <span class="keyword">new</span> AppMethodBeat.IndexRecord();</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> AppMethodBeat.IndexRecord sApplicationCreateBeginMethodIndex = <span class="keyword">new</span> AppMethodBeat.IndexRecord();</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> sApplicationCreateScene = -<span class="number">100</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">hackSysHandlerCallback</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sApplicationCreateBeginTime = SystemClock.uptimeMillis();</span><br><span class="line">            sApplicationCreateBeginMethodIndex = AppMethodBeat.getInstance().maskIndex(<span class="string">"ApplicationCreateBeginMethodIndex"</span>);</span><br><span class="line">            Class&lt;?&gt; forName = Class.forName(<span class="string">"android.app.ActivityThread"</span>);</span><br><span class="line">            Field field = forName.getDeclaredField(<span class="string">"sCurrentActivityThread"</span>);</span><br><span class="line">            field.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">            Object activityThreadValue = field.get(forName);</span><br><span class="line">            Field mH = forName.getDeclaredField(<span class="string">"mH"</span>);</span><br><span class="line">            mH.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">            Object handler = mH.get(activityThreadValue);</span><br><span class="line">            Class&lt;?&gt; handlerClass = handler.getClass().getSuperclass();</span><br><span class="line">            Field callbackField = handlerClass.getDeclaredField(<span class="string">"mCallback"</span>);</span><br><span class="line">            callbackField.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">            Handler.Callback originalCallback = (Handler.Callback) callbackField.get(handler);</span><br><span class="line">            HackCallback callback = <span class="keyword">new</span> HackCallback(originalCallback);</span><br><span class="line">            callbackField.set(handler, callback);</span><br><span class="line">            MatrixLog.i(TAG, <span class="string">"hook system handler completed. start:%s SDK_INT:%s"</span>, sApplicationCreateBeginTime, Build.VERSION.SDK_INT);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            MatrixLog.e(TAG, <span class="string">"hook system handler err! %s"</span>, e.getCause().toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getApplicationCost</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ActivityThreadHacker.sApplicationCreateEndTime - ActivityThreadHacker.sApplicationCreateBeginTime;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getEggBrokenTime</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ActivityThreadHacker.sApplicationCreateBeginTime;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getLastLaunchActivityTime</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ActivityThreadHacker.sLastLaunchActivityTime;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">HackCallback</span> <span class="keyword">implements</span> <span class="title">Handler</span>.<span class="title">Callback</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> LAUNCH_ACTIVITY = <span class="number">100</span>;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CREATE_SERVICE = <span class="number">114</span>;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> RECEIVER = <span class="number">113</span>;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> EXECUTE_TRANSACTION = <span class="number">159</span>; <span class="comment">// for Android 9.0</span></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> isCreated = <span class="keyword">false</span>;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> hasPrint = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> Handler.Callback mOriginalCallback;</span><br><span class="line"></span><br><span class="line">        HackCallback(Handler.Callback callback) &#123;</span><br><span class="line">            <span class="keyword">this</span>.mOriginalCallback = callback;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!AppMethodBeat.isRealTrace()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span> != mOriginalCallback &amp;&amp; mOriginalCallback.handleMessage(msg);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">boolean</span> isLaunchActivity = isLaunchActivity(msg);</span><br><span class="line">            <span class="keyword">if</span> (hasPrint &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                MatrixLog.i(TAG, <span class="string">"[handleMessage] msg.what:%s begin:%s isLaunchActivity:%s"</span>, msg.what, SystemClock.uptimeMillis(), isLaunchActivity);</span><br><span class="line">                hasPrint--;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (isLaunchActivity) &#123;</span><br><span class="line">                ActivityThreadHacker.sLastLaunchActivityTime = SystemClock.uptimeMillis();</span><br><span class="line">                ActivityThreadHacker.sLastLaunchActivityMethodIndex = AppMethodBeat.getInstance().maskIndex(<span class="string">"LastLaunchActivityMethodIndex"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!isCreated) &#123;</span><br><span class="line">                <span class="keyword">if</span> (isLaunchActivity || msg.what == CREATE_SERVICE || msg.what == RECEIVER) &#123; <span class="comment">// todo for provider</span></span><br><span class="line">                    ActivityThreadHacker.sApplicationCreateEndTime = SystemClock.uptimeMillis();</span><br><span class="line">                    ActivityThreadHacker.sApplicationCreateScene = msg.what;</span><br><span class="line">                    isCreated = <span class="keyword">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span> != mOriginalCallback &amp;&amp; mOriginalCallback.handleMessage(msg);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> Method method = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">isLaunchActivity</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt; Build.VERSION_CODES.O_MR1) &#123;</span><br><span class="line">                <span class="keyword">if</span> (msg.what == EXECUTE_TRANSACTION &amp;&amp; msg.obj != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        <span class="keyword">if</span> (<span class="keyword">null</span> == method) &#123;</span><br><span class="line">                            Class clazz = Class.forName(<span class="string">"android.app.servertransaction.ClientTransaction"</span>);</span><br><span class="line">                            method = clazz.getDeclaredMethod(<span class="string">"getCallbacks"</span>);</span><br><span class="line">                            method.setAccessible(<span class="keyword">true</span>);</span><br><span class="line">                        &#125;</span><br><span class="line">                        List list = (List) method.invoke(msg.obj);</span><br><span class="line">                        <span class="keyword">if</span> (!list.isEmpty()) &#123;</span><br><span class="line">                            <span class="keyword">return</span> list.get(<span class="number">0</span>).getClass().getName().endsWith(<span class="string">".LaunchActivityItem"</span>);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                        MatrixLog.e(TAG, <span class="string">"[isLaunchActivity] %s"</span>, e);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> msg.what == LAUNCH_ACTIVITY;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> msg.what == LAUNCH_ACTIVITY;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>单个activity从启动到展示UI的耗时是从launch activity到<code>onWindowFocusChanged</code>这段时间，<code>onWindowFocusChanged(true)</code>表示activity已经获取到焦点，可以和用户进行交互。</p>
+<p>到这里Matrix的TraceCanary部分就分析完了，可以看出和BlockCanCary是大体一样的原理，但微信就是做的细致和完美，包括细化每帧内几部分的执行时间、掉帧数的计算、插桩性能、上报数据大小等方面都超出竞品。</p>
+<p>其他的<code>APK Checker</code>、<code>Resource Canary</code>、<code>SQLite Lint</code>、<code>IO Canary</code>等工具后续一一来分析。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/16/CoroutineFlow/" rel="next" title="RxJava is no more essential">
+                <i class="fa fa-chevron-left"></i> RxJava is no more essential
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/16531906?s=460&v=4" alt="bboylin">
+          <p class="site-author-name" itemprop="name">bboylin</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/bboylin" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:bboylin24@gmail.com" target="_blank" title="email">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                    
+                      email
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
+                  
+                    <i class="fa fa-fw fa-user-md"></i>
+                  
+                    
+                      zhihu
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wanandroid.com" title="玩Android" target="_blank">玩Android</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#插桩插件"><span class="nav-number">1.</span> <span class="nav-text">插桩插件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#runtime-sdk"><span class="nav-number">2.</span> <span class="nav-text">runtime sdk</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#EvilMethodTracer"><span class="nav-number">2.1.</span> <span class="nav-text">EvilMethodTracer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AnrTracer"><span class="nav-number">2.2.</span> <span class="nav-text">AnrTracer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FrameTracer"><span class="nav-number">2.3.</span> <span class="nav-text">FrameTracer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#StartupTracer"><span class="nav-number">2.4.</span> <span class="nav-text">StartupTracer</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">bboylin</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://bboylin.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://bboylin.github.io/2019/12/24/matrix源码分析1/';
+          this.page.identifier = '2019/12/24/matrix源码分析1/';
+          this.page.title = 'matrix源码分析（一）：TraceCanary';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://bboylin.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
