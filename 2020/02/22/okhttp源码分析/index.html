@@ -104,7 +104,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://blog.piasy.com/img/201607/okhttp_full_process.png">
 <meta property="og:image" content="https://bboylin.github.io/images/cache-control.jpg">
-<meta property="og:updated_time" content="2020-03-26T14:56:23.906Z">
+<meta property="og:updated_time" content="2020-03-26T15:08:07.782Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="okhttp源码分析（一）：interceptors">
 <meta name="twitter:description" content="本文是基于okhttp源码的整体分析和导读，通过本文你可以了解到okhttp的整体设计和部分细节原理。阅读本文前你不妨先记下这几个问题：  一个请求是如何完成的？ 请求超时或者失败是否会重试？">
@@ -442,7 +442,7 @@
 <li>application interceptors偏上层，不关心重定向等中间结果 只会执行一次，即使使用的是cache。接触到的是最初的request，不用管okhhtp可能注入的header，比如If-None-Match。</li>
 <li>network interceptors可以直接操作重定向/重试等中间响应，可能触发多次，使用cache的时候不会触发，可以拿到connection对象。</li>
 </ul>
-<h3 id="CallServerInterceptor"><a href="#CallServerInterceptor" class="headerlink" title="CallServerInterceptor"></a>CallServerInterceptor</h3><p>最后一个interceptor 真正地向server发起请求。不细看了。</p>
+<h3 id="CallServerInterceptor"><a href="#CallServerInterceptor" class="headerlink" title="CallServerInterceptor"></a>CallServerInterceptor</h3><p>最后一个interceptor, 真正地向server发起请求。不细看了。</p>
 <hr>
 <p>本文主要分析了OKhttp发起请求的过程和其中的几个主要interceptor，比较大略，限于笔者对okhttp源码了解并不是很深入，就此打住。后续再深入分析后视情况出续文。如有错误或疏漏，欢迎指正。</p>
 
