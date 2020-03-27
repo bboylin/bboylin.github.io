@@ -104,7 +104,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://blog.piasy.com/img/201607/okhttp_full_process.png">
 <meta property="og:image" content="https://bboylin.github.io/images/cache-control.jpg">
-<meta property="og:updated_time" content="2020-03-26T15:08:07.782Z">
+<meta property="og:updated_time" content="2020-03-27T05:52:12.635Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="okhttp源码分析（一）：interceptors">
 <meta name="twitter:description" content="本文是基于okhttp源码的整体分析和导读，通过本文你可以了解到okhttp的整体设计和部分细节原理。阅读本文前你不妨先记下这几个问题：  一个请求是如何完成的？ 请求超时或者失败是否会重试？">
@@ -400,9 +400,11 @@
 <p>一个个来看：</p>
 <ul>
 <li>407/401：带上认证header继续请求</li>
-<li>307/308：如果是GET/HEAD请求就重定向。注意 这里okhttp的实现和RFC标准似乎有些出入。可见<a href="https://tools.ietf.org/html/rfc7231#section-6.4.7" target="_blank" rel="noopener">rfc7231#section-6.4.7</a>：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">The server SHOULD generate a Location header field in the response containing a URI reference for the different URI.  The user agent MAY use the Location field value for automatic redirection.  The server&apos;s response payload usually contains a short hypertext note with a hyperlink to the different URI(s).</span><br></pre></td></tr></table></figure>
-</li>
+<li>307/308：如果是GET/HEAD请求就重定向。注意 这里okhttp的实现和RFC标准似乎有些出入。可见<a href="https://tools.ietf.org/html/rfc7231#section-6.4.7" target="_blank" rel="noopener">rfc7231#section-6.4.7</a>：</li>
 </ul>
+<blockquote>
+<p>The server SHOULD generate a Location header field in the response containing a URI reference for the different URI.  The user agent MAY use the Location field value for automatic redirection.  The server’s response payload usually contains a short hypertext note with a hyperlink to the different URI(s).</p>
+</blockquote>
 <p>可见307/308其实并不是只有GET/HEAD才能重定向的，但是不太清楚这里为什么这样限制。（另外307和302的区别在于，302允许把post请求改成get请求，这取决于网络代理的实现）</p>
 <ul>
 <li>300/301/302/303：直接重定向</li>
