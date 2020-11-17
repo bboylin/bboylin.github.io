@@ -104,7 +104,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://blog.piasy.com/img/201607/okhttp_full_process.png">
 <meta property="og:image" content="https://bboylin.github.io/images/cache-control.jpg">
-<meta property="og:updated_time" content="2020-03-27T05:52:12.635Z">
+<meta property="og:updated_time" content="2020-04-16T06:14:11.589Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="okhttp源码分析（一）：interceptors">
 <meta name="twitter:description" content="本文是基于okhttp源码的整体分析和导读，通过本文你可以了解到okhttp的整体设计和部分细节原理。阅读本文前你不妨先记下这几个问题：  一个请求是如何完成的？ 请求超时或者失败是否会重试？">
@@ -445,8 +445,9 @@
 <li>network interceptors可以直接操作重定向/重试等中间响应，可能触发多次，使用cache的时候不会触发，可以拿到connection对象。</li>
 </ul>
 <h3 id="CallServerInterceptor"><a href="#CallServerInterceptor" class="headerlink" title="CallServerInterceptor"></a>CallServerInterceptor</h3><p>最后一个interceptor, 真正地向server发起请求。不细看了。</p>
+<h2 id="单测"><a href="#单测" class="headerlink" title="单测"></a>单测</h2><p>可以看到okhttp整个源码中单测非常多，粒度也比较细，很多类都有对应的单测，而且因为是基础框架 不涉及UI等Android环境，非常适合junit单测。同时通过MockWebServer本地起了一个server socket服务，可以手动构建响应数据，以此测试全流程。</p>
 <hr>
-<p>本文主要分析了OKhttp发起请求的过程和其中的几个主要interceptor，比较大略，限于笔者对okhttp源码了解并不是很深入，就此打住。后续再深入分析后视情况出续文。如有错误或疏漏，欢迎指正。</p>
+<p>本文主要简单分析了OKhttp发起请求的过程和其中的几个主要interceptor，比较大略，限于笔者对okhttp源码了解并不是很深入，就此打住。后续再深入分析后视情况出续文。如有错误或疏漏，欢迎指正。</p>
 
       
     </div>
@@ -624,28 +625,6 @@
                 </a>
               </span>
             
-              <span class="links-of-author-item">
-                <a href="http://weibo.com/u/5297849126" target="_blank" title="Weibo">
-                  
-                    <i class="fa fa-fw fa-weibo"></i>
-                  
-                    
-                      Weibo
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://www.zhihu.com/people/bboylin" target="_blank" title="zhihu">
-                  
-                    <i class="fa fa-fw fa-user-md"></i>
-                  
-                    
-                      zhihu
-                    
-                </a>
-              </span>
-            
           
         </div>
 
@@ -684,7 +663,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#整体流程"><span class="nav-number">1.</span> <span class="nav-text">整体流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RetryAndFollowUpInterceptor"><span class="nav-number">1.1.</span> <span class="nav-text">RetryAndFollowUpInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BridgeInterceptor"><span class="nav-number">1.2.</span> <span class="nav-text">BridgeInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CacheInterceptor"><span class="nav-number">1.3.</span> <span class="nav-text">CacheInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ConnectInterceptor"><span class="nav-number">1.4.</span> <span class="nav-text">ConnectInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#networkInterceptors"><span class="nav-number">1.5.</span> <span class="nav-text">networkInterceptors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CallServerInterceptor"><span class="nav-number">1.6.</span> <span class="nav-text">CallServerInterceptor</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#整体流程"><span class="nav-number">1.</span> <span class="nav-text">整体流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RetryAndFollowUpInterceptor"><span class="nav-number">1.1.</span> <span class="nav-text">RetryAndFollowUpInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BridgeInterceptor"><span class="nav-number">1.2.</span> <span class="nav-text">BridgeInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CacheInterceptor"><span class="nav-number">1.3.</span> <span class="nav-text">CacheInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ConnectInterceptor"><span class="nav-number">1.4.</span> <span class="nav-text">ConnectInterceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#networkInterceptors"><span class="nav-number">1.5.</span> <span class="nav-text">networkInterceptors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CallServerInterceptor"><span class="nav-number">1.6.</span> <span class="nav-text">CallServerInterceptor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#单测"><span class="nav-number">2.</span> <span class="nav-text">单测</span></a></li></ol></div>
             
 
           </div>
